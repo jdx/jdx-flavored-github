@@ -915,9 +915,17 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		button.type = 'button';
 		const icon = document.createElement('span');
 		icon.className = 'github-inbox-tuner-collapse-icon';
+		const placeholders = document.createElement('span');
+		placeholders.className = 'github-inbox-tuner-collapse-placeholders';
+		placeholders.setAttribute('aria-hidden', 'true');
+		for (let index = 0; index < Math.min(group.length - 1, 3); index++) {
+			const placeholder = document.createElement('span');
+			placeholder.className = 'github-inbox-tuner-collapse-placeholder';
+			placeholders.append(placeholder);
+		}
 		const text = document.createElement('span');
 		text.textContent = label;
-		button.append(icon, text);
+		button.append(icon, placeholders, text);
 
 		const updateExpandedState = expanded => {
 			representative.row.classList.toggle(
@@ -925,6 +933,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
+			text.textContent = expanded ? 'Collapse nested items' : label;
 			button.title = expanded
 				? 'Collapse these pull request notifications'
 				: `Expand ${group.length} related pull request notifications`;
@@ -932,6 +941,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				row.classList.toggle(
 					'github-inbox-tuner-stack-member--collapsed',
 					row !== representative.row && !expanded,
+				);
+				row.classList.toggle(
+					'github-inbox-tuner-collapse-member--expanded',
+					row !== representative.row && expanded,
 				);
 			}
 		};
@@ -1008,6 +1021,9 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		for (const row of document.querySelectorAll('.github-inbox-tuner-stack-member--collapsed')) {
 			row.classList.remove('github-inbox-tuner-stack-member--collapsed');
 		}
+		for (const row of document.querySelectorAll('.github-inbox-tuner-collapse-member--expanded')) {
+			row.classList.remove('github-inbox-tuner-collapse-member--expanded');
+		}
 		for (const row of document.querySelectorAll(
 			'.github-inbox-tuner-collapse-representative--expanded',
 		)) {
@@ -1058,7 +1074,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				decorateCollapsedGroup(
 					stack,
 					signature,
-					`${stack.length} PR stack`,
+					`${stack.length - 1} more ${stack.length === 2 ? 'PR' : 'PRs'} in stack`,
 				);
 			}
 
@@ -1074,8 +1090,8 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 					authorGroup,
 					signature,
 					isDependencyUpdateAuthor(author)
-						? `${authorGroup.length} dependency updates`
-						: `${authorGroup.length} PRs by ${author}`,
+						? `${authorGroup.length - 1} more dependency ${authorGroup.length === 2 ? 'update' : 'updates'}`
+						: `${authorGroup.length - 1} more ${authorGroup.length === 2 ? 'PR' : 'PRs'} by ${author}`,
 				);
 			}
 		}

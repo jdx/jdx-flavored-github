@@ -10,6 +10,14 @@
 	display: none !important;
 }
 
+.notifications-list-item.github-inbox-tuner-collapse-member--expanded,
+.github-inbox-tuner-query-member--expanded {
+	border-left: 2px solid var(--borderColor-muted, var(--color-border-muted)) !important;
+	box-sizing: border-box;
+	margin-left: 16px !important;
+	width: calc(100% - 16px) !important;
+}
+
 .notifications-list-item.github-inbox-tuner-dimmed {
 	opacity: 0.58;
 }
@@ -51,24 +59,33 @@
 
 .github-inbox-tuner-collapse-toggle {
 	align-items: center;
-	background: none;
-	border: 0;
-	color: var(--fgColor-accent, var(--color-accent-fg));
+	background: var(--bgColor-muted, var(--color-canvas-subtle));
+	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 6px;
+	color: var(--fgColor-muted, var(--color-fg-muted));
 	cursor: pointer;
 	display: inline-flex;
 	font: inherit;
 	font-size: 11px;
 	font-weight: 600;
-	gap: 4px;
+	gap: 6px;
 	line-height: 18px;
-	margin-left: 6px;
-	padding: 0;
+	margin: 6px 0 0 6px;
+	min-height: 28px;
+	padding: 4px 8px;
 	vertical-align: baseline;
 	white-space: nowrap;
 }
 
 .github-inbox-tuner-collapse-toggle:hover {
-	text-decoration: underline;
+	background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
+	border-color: var(--borderColor-default, var(--color-border-default));
+	text-decoration: none;
+}
+
+.github-inbox-tuner-collapse-toggle:focus-visible {
+	outline: 2px solid var(--focus-outlineColor, var(--color-accent-fg));
+	outline-offset: 2px;
 }
 
 .github-inbox-tuner-collapse-icon::before {
@@ -80,6 +97,33 @@
 .github-inbox-tuner-collapse-representative--expanded
 	.github-inbox-tuner-collapse-icon::before {
 	transform: rotate(90deg);
+}
+
+.github-inbox-tuner-collapse-placeholders {
+	display: grid;
+	gap: 2px;
+	width: 34px;
+}
+
+.github-inbox-tuner-collapse-placeholder {
+	background: var(--fgColor-muted, var(--color-fg-muted));
+	border-radius: 2px;
+	display: block;
+	height: 4px;
+	opacity: 0.45;
+}
+
+.github-inbox-tuner-collapse-placeholder:nth-child(2) {
+	width: 84%;
+}
+
+.github-inbox-tuner-collapse-placeholder:nth-child(3) {
+	width: 68%;
+}
+
+.github-inbox-tuner-collapse-representative--expanded
+	.github-inbox-tuner-collapse-placeholders {
+	display: none;
 }
 
 #github-inbox-tuner-views {

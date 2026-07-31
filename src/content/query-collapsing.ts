@@ -52,12 +52,21 @@ export function createQueryListCollapsing({
 		button.type = 'button';
 		const icon = document.createElement('span');
 		icon.className = 'github-inbox-tuner-collapse-icon';
+		const placeholders = document.createElement('span');
+		placeholders.className = 'github-inbox-tuner-collapse-placeholders';
+		placeholders.setAttribute('aria-hidden', 'true');
+		for (let index = 0; index < Math.min(group.length - 1, 3); index++) {
+			const placeholder = document.createElement('span');
+			placeholder.className = 'github-inbox-tuner-collapse-placeholder';
+			placeholders.append(placeholder);
+		}
 		const text = document.createElement('span');
 		const itemLabel = surface === 'pulls' ? 'PRs' : 'issues';
 		text.textContent = isDependencyUpdateAuthor(author)
-			? `${group.length} dependency updates`
-			: `${group.length} ${itemLabel} by ${author}`;
-		button.append(icon, text);
+			? `${group.length - 1} more dependency ${group.length === 2 ? 'update' : 'updates'}`
+			: `${group.length - 1} more ${group.length === 2 ? itemLabel.slice(0, -1) : itemLabel} by ${author}`;
+		const collapsedLabel = text.textContent;
+		button.append(icon, placeholders, text);
 
 		const updateExpandedState = (expanded: boolean) => {
 			representative.row.classList.toggle(
@@ -65,6 +74,7 @@ export function createQueryListCollapsing({
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
+			text.textContent = expanded ? 'Collapse nested items' : collapsedLabel;
 			button.title = expanded
 				? `Collapse these ${itemLabel}`
 				: `Expand ${group.length} ${itemLabel}`;
@@ -72,6 +82,10 @@ export function createQueryListCollapsing({
 				row.classList.toggle(
 					'github-inbox-tuner-query-member--collapsed',
 					row !== representative.row && !expanded,
+				);
+				row.classList.toggle(
+					'github-inbox-tuner-query-member--expanded',
+					row !== representative.row && expanded,
 				);
 			}
 		};
@@ -106,6 +120,11 @@ export function createQueryListCollapsing({
 			'.github-inbox-tuner-query-member--collapsed',
 		)) {
 			row.classList.remove('github-inbox-tuner-query-member--collapsed');
+		}
+		for (const row of document.querySelectorAll(
+			'.github-inbox-tuner-query-member--expanded',
+		)) {
+			row.classList.remove('github-inbox-tuner-query-member--expanded');
 		}
 		const options = getOptions();
 		const groups = new Map<string, Array<QueryTarget & {author: string}>>();
