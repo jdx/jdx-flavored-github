@@ -1174,12 +1174,11 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		return items;
 	}
 
-	async function updateNotificationStacks() {
+	function decorateCachedNotificationStacks() {
 		if (!isNotificationsPage()) {
-			return;
+			return [];
 		}
 
-		const generation = ++notificationStackGeneration;
 		clearNotificationStackDecorations(document);
 		const lists = [...new Set(
 			[...document.querySelectorAll('.notifications-list-item')].map(row => row.parentElement),
@@ -1200,6 +1199,16 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				.filter(item => item.metadata);
 			decorateNotificationGroups(cachedItems);
 		}
+		return lists;
+	}
+
+	async function updateNotificationStacks() {
+		if (!isNotificationsPage()) {
+			return;
+		}
+
+		const generation = ++notificationStackGeneration;
+		const lists = decorateCachedNotificationStacks();
 
 		const loadedItems = await loadPullRequestMetadata(
 			lists.flatMap(({candidates}) => candidates),
@@ -1243,6 +1252,8 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 
 	function scheduleNotificationStackRefresh() {
 		clearTimeout(notificationStackRefresh);
+		notificationStackGeneration++;
+		decorateCachedNotificationStacks();
 		notificationStackRefresh = setTimeout(() => {
 			void updateNotificationStacks();
 		}, 350);

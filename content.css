@@ -74,8 +74,8 @@
 	width: 100%;
 }
 
-.github-inbox-tuner-collapse-toggle--expanded {
-	display: none;
+.github-inbox-tuner-collapse-toggle.github-inbox-tuner-collapse-toggle--expanded {
+	display: none !important;
 }
 
 .github-inbox-tuner-collapse-toggle:hover {
