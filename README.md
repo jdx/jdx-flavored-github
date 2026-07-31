@@ -118,8 +118,10 @@ is:open is:issue assignee:@me
 ## How metadata is loaded
 
 The extension reads GitHub’s same-origin pages and deferred status responses
-using the current browser session. Check results and PR metadata are cached
-locally for five minutes to avoid repeating work during navigation.
+using the current browser session. Check results are cached locally for five
+minutes. Stable PR grouping facts are cached for 24 hours so collapsed groups
+can render immediately after reload while full metadata refreshes in the
+background.
 
 Exact per-PR check results take priority over GitHub search rollups, so a
 failure is not mislabeled as pending just because another check is still

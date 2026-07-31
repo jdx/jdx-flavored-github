@@ -10,6 +10,31 @@
 	display: none !important;
 }
 
+.notifications-list-item.github-inbox-tuner-collapse-member--expanded {
+	border-left: 2px solid var(--borderColor-muted, var(--color-border-muted)) !important;
+	box-sizing: border-box;
+	margin-left: 16px !important;
+	width: calc(100% - 16px) !important;
+}
+
+.github-inbox-tuner-query-member--expanded {
+	background: linear-gradient(
+		to right,
+		var(--bgColor-muted, var(--color-canvas-subtle)) 0 14px,
+		var(--borderColor-muted, var(--color-border-muted)) 14px 16px,
+		transparent 16px
+	);
+	border-left: 0 !important;
+	box-sizing: border-box;
+	margin-left: 0 !important;
+	width: 100% !important;
+}
+
+.github-inbox-tuner-query-member--expanded > .Box-row--drag-hide {
+	margin-left: 16px;
+	width: calc(100% - 16px);
+}
+
 .notifications-list-item.github-inbox-tuner-dimmed {
 	opacity: 0.58;
 }
@@ -51,24 +76,98 @@
 
 .github-inbox-tuner-collapse-toggle {
 	align-items: center;
-	background: none;
+	appearance: none;
+	background: transparent;
 	border: 0;
-	color: var(--fgColor-accent, var(--color-accent-fg));
+	border-radius: 0;
+	box-sizing: border-box;
+	color: var(--fgColor-muted, var(--color-fg-muted));
 	cursor: pointer;
-	display: inline-flex;
-	font: inherit;
-	font-size: 11px;
-	font-weight: 600;
-	gap: 4px;
-	line-height: 18px;
-	margin-left: 6px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	margin: 0;
+	min-height: 0;
 	padding: 0;
-	vertical-align: baseline;
-	white-space: nowrap;
+	width: 100%;
+}
+
+.github-inbox-tuner-collapse-toggle.github-inbox-tuner-collapse-toggle--expanded {
+	display: none !important;
 }
 
 .github-inbox-tuner-collapse-toggle:hover {
-	text-decoration: underline;
+	background: var(--bgColor-muted, var(--color-canvas-subtle));
+	text-decoration: none;
+}
+
+.github-inbox-tuner-list-collapse-toggle {
+	background: var(--bgColor-muted, var(--color-canvas-subtle));
+	display: grid;
+}
+
+.github-inbox-tuner-list-check-status {
+	align-items: center;
+	display: inline-flex !important;
+	flex: 0 0 22px;
+	justify-content: center;
+	margin-left: 4px;
+	min-width: 22px;
+	width: 22px;
+}
+
+.github-inbox-tuner-list-check-status .commit-build-statuses,
+.github-inbox-tuner-list-check-status .commit-build-statuses > summary {
+	flex: 0 0 16px;
+	min-width: 16px;
+}
+
+.github-inbox-tuner-collapse-toggle:focus-visible {
+	outline: 2px solid var(--focus-outlineColor, var(--color-accent-fg));
+	outline-offset: 2px;
+}
+
+.github-inbox-tuner-collapse-chevron {
+	align-items: center;
+	appearance: none;
+	background: transparent;
+	border: 0;
+	border-radius: 3px;
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	cursor: pointer;
+	display: inline-flex;
+	align-self: center;
+	flex: 0 0 18px;
+	height: 18px;
+	justify-content: center;
+	margin: 0 4px 0 0;
+	padding: 0;
+	vertical-align: middle;
+	width: 18px;
+}
+
+.github-inbox-tuner-collapse-chevron:hover {
+	background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
+}
+
+.github-inbox-tuner-list-collapse-chevron {
+	flex-basis: 24px;
+	font-size: 14px;
+	height: 24px;
+	margin: 0;
+	position: absolute;
+	right: 44px;
+	top: 8px;
+	width: 24px;
+	z-index: 1;
+}
+
+.github-inbox-tuner-query-representative {
+	position: relative;
+}
+
+.github-inbox-tuner-collapse-chevron:focus-visible {
+	outline: 2px solid var(--focus-outlineColor, var(--color-accent-fg));
+	outline-offset: 1px;
 }
 
 .github-inbox-tuner-collapse-icon::before {
@@ -77,9 +176,35 @@
 	transition: transform 100ms ease;
 }
 
-.github-inbox-tuner-collapse-representative--expanded
+.github-inbox-tuner-collapse-chevron[aria-expanded="true"]
 	.github-inbox-tuner-collapse-icon::before {
 	transform: rotate(90deg);
+}
+
+.github-inbox-tuner-collapse-placeholders {
+	display: grid;
+	gap: 0;
+	width: 100%;
+}
+
+.github-inbox-tuner-collapse-placeholder {
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 0;
+	box-sizing: border-box;
+	display: block;
+	height: 10px;
+	opacity: 1;
+	width: 100%;
+}
+
+.github-inbox-tuner-collapse-placeholder:nth-child(2) {
+	width: 100%;
+}
+
+.github-inbox-tuner-collapse-placeholder:nth-child(3) {
+	width: 100%;
 }
 
 #github-inbox-tuner-views {
@@ -738,9 +863,16 @@
 
 .github-inbox-tuner-check-status {
 	align-items: center;
-	display: inline-flex;
+	display: inline-flex !important;
+	flex: 0 0 20px;
+	height: 16px;
+	justify-content: center;
 	margin-left: 6px;
+	margin-right: 5px;
+	min-width: 20px;
+	line-height: 16px;
 	vertical-align: baseline;
+	width: 20px;
 }
 
 .github-inbox-tuner-original-pr-icon--hidden {
@@ -768,11 +900,13 @@
 .github-inbox-tuner-status--check {
 	align-items: center;
 	display: inline-flex;
-	font-size: 12px;
+	font-size: 16px;
 	font-weight: 700;
 	justify-content: center;
+	height: 16px;
 	line-height: 1;
-	min-width: 12px;
+	min-width: 16px;
+	width: 16px;
 }
 
 .github-inbox-tuner-status--check::before {

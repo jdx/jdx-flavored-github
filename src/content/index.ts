@@ -13,7 +13,11 @@ import {
 	isNotificationsPage,
 	showsArchivedNotifications,
 } from './page.js';
-import {findStackComponents, isDependencyUpdateAuthor} from './grouping.js';
+import {
+	findStackComponents,
+	isDependencyUpdateAuthor,
+	orderStackItems,
+} from './grouping.js';
 import {
 	getNotificationFacts,
 	getNotificationRepository,
@@ -25,6 +29,10 @@ import {
 	parseCommitStatusPartial,
 	parseMergeConflict,
 	parsePullRequestMetadata,
+} from './pull-request-metadata.js';
+import type {
+	PullRequestMetadata,
+	PullRequestReference,
 } from './pull-request-metadata.js';
 import {createQueryListCollapsing} from './query-collapsing.js';
 import {updateRevealedIndicator, updateStatusBadges} from './status.js';
@@ -61,13 +69,17 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	const expandedNotificationStacks = new Set<string>();
 	const {scheduleQueryListCollapseRefresh} = createQueryListCollapsing({
 		expandedGroups: expandedNotificationStacks,
+		getCachedMetadata: reference => getCachedPullRequestGroupingMetadata(reference),
 		getOptions: () => options,
 		getTargets: surface => getListBulkTargets(surface),
+		loadMetadata: candidates => loadPullRequestMetadata(candidates),
 	});
 	const pullRequestChecksStorageKey = 'pullRequestChecksCache';
 	const pullRequestLabelsStorageKey = 'pullRequestLabelsCache';
+	const pullRequestMetadataStorageKey = 'pullRequestMetadataCache';
 	const checksFreshFor = 5 * 60 * 1000;
 	const checksUsableFor = 60 * 60 * 1000;
+	const metadataUsableFor = 24 * 60 * 60 * 1000;
 
 	function getSurfaceOverride(surface: Surface, repository?: string) {
 		return (
@@ -446,6 +458,26 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		}
 	}
 
+	async function hydratePullRequestMetadataCache() {
+		const stored = await chrome.storage.local.get(pullRequestMetadataStorageKey);
+		for (const [key, entry] of Object.entries(
+			stored[pullRequestMetadataStorageKey] ?? {},
+		)) {
+			if (
+				!entry?.updatedAt
+				|| Date.now() - entry.updatedAt >= metadataUsableFor
+				|| !entry.value?.author
+			) {
+				continue;
+			}
+			pullRequestMetadataCache.set(key, {
+				complete: false,
+				updatedAt: entry.updatedAt,
+				value: entry.value,
+			});
+		}
+	}
+
 	async function persistPullRequestChecksCache() {
 		const stored = {};
 		for (const [repository, value] of pullRequestChecksCache) {
@@ -480,6 +512,29 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			};
 		}
 		await chrome.storage.local.set({[pullRequestLabelsStorageKey]: stored});
+	}
+
+	async function persistPullRequestMetadataCache() {
+		const stored = Object.fromEntries(
+			[...pullRequestMetadataCache]
+				.filter(([, entry]) => (
+					entry.value?.author
+					&& Date.now() - entry.updatedAt < metadataUsableFor
+				))
+				.sort((left, right) => right[1].updatedAt - left[1].updatedAt)
+				.slice(0, 500)
+				.map(([key, entry]) => [key, {
+					updatedAt: entry.updatedAt,
+					value: {
+						author: entry.value.author,
+						baseKey: entry.value.baseKey,
+						headKey: entry.value.headKey,
+						number: entry.value.number,
+						title: entry.value.title,
+					},
+				}]),
+		);
+		await chrome.storage.local.set({[pullRequestMetadataStorageKey]: stored});
 	}
 
 	async function enrichPullRequestCheckFacts(rows, classify = false) {
@@ -819,7 +874,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	async function getPullRequestMetadata(reference) {
 		const key = `${reference.repository}#${reference.number}`;
 		const cached = pullRequestMetadataCache.get(key);
-		if (cached && Date.now() - cached.updatedAt < 5 * 60 * 1000) {
+		if (
+			cached?.complete
+			&& Date.now() - cached.updatedAt < 5 * 60 * 1000
+		) {
 			return cached.value;
 		}
 
@@ -882,8 +940,18 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				};
 			}
 		}
-		pullRequestMetadataCache.set(key, {updatedAt: Date.now(), value});
+		pullRequestMetadataCache.set(key, {complete: true, updatedAt: Date.now(), value});
 		return value;
+	}
+
+	function getCachedPullRequestGroupingMetadata(reference) {
+		const cached = pullRequestMetadataCache.get(
+			`${reference.repository}#${reference.number}`,
+		);
+		return cached?.value?.author
+			&& Date.now() - cached.updatedAt < metadataUsableFor
+			? cached.value
+			: undefined;
 	}
 
 	function findAuthorComponents(items) {
@@ -907,17 +975,43 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		return [...groups.values()].filter(group => group.length > 1);
 	}
 
-	function decorateCollapsedGroup(group, signature, label) {
-		const baseKeys = new Set(group.map(item => item.metadata.baseKey));
-		const representative = group.find(item => !baseKeys.has(item.metadata.headKey)) ?? group[0];
+	function placeGroupRowsInOrder(group) {
+		const rows = group.map(item => item.row);
+		const parent = rows[0]?.parentElement;
+		if (!parent || !rows.every(row => row.parentElement === parent)) {
+			return;
+		}
+		const children = [...parent.children];
+		const firstIndex = Math.min(...rows.map(row => children.indexOf(row)));
+		if (
+			firstIndex < 0
+			|| rows.every((row, index) => children[firstIndex + index] === row)
+		) {
+			return;
+		}
+		children[firstIndex].before(...rows);
+	}
+
+	function decorateCollapsedGroup(group, signature, label, expandedLabel) {
+		const representative = group[0];
 		const button = document.createElement('button');
 		button.className = 'github-inbox-tuner-collapse-toggle';
 		button.type = 'button';
+		const chevron = document.createElement('button');
+		chevron.className = 'github-inbox-tuner-collapse-chevron';
+		chevron.type = 'button';
 		const icon = document.createElement('span');
 		icon.className = 'github-inbox-tuner-collapse-icon';
-		const text = document.createElement('span');
-		text.textContent = label;
-		button.append(icon, text);
+		chevron.append(icon);
+		const placeholders = document.createElement('span');
+		placeholders.className = 'github-inbox-tuner-collapse-placeholders';
+		placeholders.setAttribute('aria-hidden', 'true');
+		for (let index = 0; index < Math.min(group.length - 1, 5); index++) {
+			const placeholder = document.createElement('span');
+			placeholder.className = 'github-inbox-tuner-collapse-placeholder';
+			placeholders.append(placeholder);
+		}
+		button.append(placeholders);
 
 		const updateExpandedState = expanded => {
 			representative.row.classList.toggle(
@@ -925,17 +1019,34 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
+			chevron.setAttribute('aria-expanded', String(expanded));
+			button.setAttribute(
+				'aria-label',
+				expanded ? expandedLabel : `Expand ${group.length} related pull requests; ${label}`,
+			);
+			button.classList.toggle(
+				'github-inbox-tuner-collapse-toggle--expanded',
+				expanded,
+			);
 			button.title = expanded
-				? 'Collapse these pull request notifications'
+				? expandedLabel
 				: `Expand ${group.length} related pull request notifications`;
+			chevron.setAttribute('aria-label', expanded ? expandedLabel : label);
+			chevron.title = expanded ? expandedLabel : label;
 			for (const {row} of group) {
 				row.classList.toggle(
 					'github-inbox-tuner-stack-member--collapsed',
 					row !== representative.row && !expanded,
 				);
+				row.classList.toggle(
+					'github-inbox-tuner-collapse-member--expanded',
+					row !== representative.row && expanded,
+				);
 			}
 		};
-		button.addEventListener('click', () => {
+		const toggleExpanded = event => {
+			event.preventDefault();
+			event.stopPropagation();
 			const expanded = !expandedNotificationStacks.has(signature);
 			if (expanded) {
 				expandedNotificationStacks.add(signature);
@@ -943,11 +1054,77 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				expandedNotificationStacks.delete(signature);
 			}
 			updateExpandedState(expanded);
-		});
+		};
+		button.addEventListener('click', toggleExpanded);
+		chevron.addEventListener('click', toggleExpanded);
 		updateExpandedState(expandedNotificationStacks.has(signature));
-		const title = representative.row.querySelector('.markdown-title');
-		const statuses = representative.row.querySelector('.github-inbox-tuner-statuses');
-		(statuses ?? title)?.after(button);
+		representative.row.querySelector('.notification-list-item-link')?.after(chevron);
+		representative.row.after(button);
+	}
+
+	function clearNotificationStackDecorations(root) {
+		for (const toggle of root.querySelectorAll('.github-inbox-tuner-collapse-toggle')) {
+			toggle.remove();
+		}
+		for (const chevron of root.querySelectorAll('.github-inbox-tuner-collapse-chevron')) {
+			chevron.remove();
+		}
+		for (const row of root.querySelectorAll('.github-inbox-tuner-stack-member--collapsed')) {
+			row.classList.remove('github-inbox-tuner-stack-member--collapsed');
+		}
+		for (const row of root.querySelectorAll('.github-inbox-tuner-collapse-member--expanded')) {
+			row.classList.remove('github-inbox-tuner-collapse-member--expanded');
+		}
+		for (const row of root.querySelectorAll(
+			'.github-inbox-tuner-collapse-representative--expanded',
+		)) {
+			row.classList.remove('github-inbox-tuner-collapse-representative--expanded');
+		}
+	}
+
+	function decorateNotificationGroups(items: Array<{
+		metadata: PullRequestMetadata;
+		reference: PullRequestReference;
+		row: Element;
+	}>) {
+		const groupedItems = new Set();
+		for (const component of findStackComponents(items)) {
+			const stack = orderStackItems(component);
+			for (const item of stack) {
+				groupedItems.add(item);
+			}
+			placeGroupRowsInOrder(stack);
+			const signature = `${stack[0].reference.repository}:${stack
+				.map(item => item.reference.number)
+				.sort((left, right) => left - right)
+				.join(',')}`;
+			decorateCollapsedGroup(
+				stack,
+				signature,
+				`${stack.length - 1} more ${stack.length === 2 ? 'PR' : 'PRs'} in stack`,
+				`Collapse ${stack.length}-PR stack`,
+			);
+		}
+
+		for (const authorGroup of findAuthorComponents(
+			items.filter(item => !groupedItems.has(item)),
+		)) {
+			const author = authorGroup[0].metadata.author;
+			const signature = `${authorGroup[0].reference.repository}:author:${author.toLowerCase()}:${authorGroup
+				.map(item => item.reference.number)
+				.sort((left, right) => left - right)
+				.join(',')}`;
+			decorateCollapsedGroup(
+				authorGroup,
+				signature,
+				isDependencyUpdateAuthor(author)
+					? `${authorGroup.length - 1} more dependency ${authorGroup.length === 2 ? 'update' : 'updates'}`
+					: `${authorGroup.length - 1} more ${authorGroup.length === 2 ? 'PR' : 'PRs'} by ${author}`,
+				isDependencyUpdateAuthor(author)
+					? `Collapse dependency updates by ${author}`
+					: `Collapse PRs by ${author}`,
+			);
+		}
 	}
 
 	async function loadPullRequestMetadata(candidates) {
@@ -966,6 +1143,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			},
 		);
 		await Promise.all(workers);
+		void persistPullRequestMetadataCache();
 		return results.filter(item => item.metadata);
 	}
 
@@ -996,35 +1174,58 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		return items;
 	}
 
+	function decorateCachedNotificationStacks() {
+		if (!isNotificationsPage()) {
+			return [];
+		}
+
+		clearNotificationStackDecorations(document);
+		const lists = [...new Set(
+			[...document.querySelectorAll('.notifications-list-item')].map(row => row.parentElement),
+		)].map(list => ({
+			candidates: [...list.querySelectorAll(':scope > .notifications-list-item')]
+				.filter(row => !row.classList.contains('github-inbox-tuner-hidden'))
+				.map(row => ({reference: getPullRequestReference(row), row}))
+				.filter(item => item.reference),
+			list,
+		}));
+
+		for (const {candidates} of lists) {
+			const cachedItems = candidates
+				.map(item => ({
+					...item,
+					metadata: getCachedPullRequestGroupingMetadata(item.reference),
+				}))
+				.filter(item => item.metadata);
+			decorateNotificationGroups(cachedItems);
+		}
+		return lists;
+	}
+
 	async function updateNotificationStacks() {
 		if (!isNotificationsPage()) {
 			return;
 		}
 
 		const generation = ++notificationStackGeneration;
-		for (const toggle of document.querySelectorAll('.github-inbox-tuner-collapse-toggle')) {
-			toggle.remove();
+		const lists = decorateCachedNotificationStacks();
+
+		const loadedItems = await loadPullRequestMetadata(
+			lists.flatMap(({candidates}) => candidates),
+		);
+		if (generation !== notificationStackGeneration) {
+			return;
 		}
-		for (const row of document.querySelectorAll('.github-inbox-tuner-stack-member--collapsed')) {
-			row.classList.remove('github-inbox-tuner-stack-member--collapsed');
-		}
-		for (const row of document.querySelectorAll(
-			'.github-inbox-tuner-collapse-representative--expanded',
-		)) {
-			row.classList.remove('github-inbox-tuner-collapse-representative--expanded');
+		const itemsByList = new Map();
+		for (const item of loadedItems) {
+			const listItems = itemsByList.get(item.row.parentElement) ?? [];
+			listItems.push(item);
+			itemsByList.set(item.row.parentElement, listItems);
 		}
 
-		for (const list of new Set(
-			[...document.querySelectorAll('.notifications-list-item')].map(row => row.parentElement),
-		)) {
-			const candidates = [...list.querySelectorAll(':scope > .notifications-list-item')]
-				.filter(row => !row.classList.contains('github-inbox-tuner-hidden'))
-				.map(row => ({reference: getPullRequestReference(row), row}))
-				.filter(item => item.reference);
-			const items = await loadPullRequestMetadata(candidates);
-			if (generation !== notificationStackGeneration) {
-				return;
-			}
+		for (const {list} of lists) {
+			const items = itemsByList.get(list) ?? [];
+			clearNotificationStackDecorations(list);
 			let exactStatusesChanged = false;
 			for (const item of items) {
 				item.row.dataset.githubInboxTunerAuthor = item.metadata.author ?? '';
@@ -1045,44 +1246,14 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			if (exactStatusesChanged) {
 				void persistPullRequestChecksCache();
 			}
-
-			const groupedItems = new Set();
-			for (const stack of findStackComponents(items)) {
-				for (const item of stack) {
-					groupedItems.add(item);
-				}
-				const signature = `${stack[0].reference.repository}:${stack
-					.map(item => item.reference.number)
-					.sort((left, right) => left - right)
-					.join(',')}`;
-				decorateCollapsedGroup(
-					stack,
-					signature,
-					`${stack.length} PR stack`,
-				);
-			}
-
-			for (const authorGroup of findAuthorComponents(
-				items.filter(item => !groupedItems.has(item)),
-			)) {
-				const author = authorGroup[0].metadata.author;
-				const signature = `${authorGroup[0].reference.repository}:author:${author.toLowerCase()}:${authorGroup
-					.map(item => item.reference.number)
-					.sort((left, right) => left - right)
-					.join(',')}`;
-				decorateCollapsedGroup(
-					authorGroup,
-					signature,
-					isDependencyUpdateAuthor(author)
-						? `${authorGroup.length} dependency updates`
-						: `${authorGroup.length} PRs by ${author}`,
-				);
-			}
+			decorateNotificationGroups(items);
 		}
 	}
 
 	function scheduleNotificationStackRefresh() {
 		clearTimeout(notificationStackRefresh);
+		notificationStackGeneration++;
+		decorateCachedNotificationStacks();
 		notificationStackRefresh = setTimeout(() => {
 			void updateNotificationStacks();
 		}, 350);
@@ -2553,6 +2724,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			chrome.storage.sync.get(Object.keys(defaults)),
 			hydratePullRequestChecksCache(),
 			hydratePullRequestLabelsCache(),
+			hydratePullRequestMetadataCache(),
 		]);
 		options = {...defaults, ...storedOptions};
 		builtInNotificationRules = dsl.cloneBuiltInNotificationRules();
@@ -2618,6 +2790,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			[...mutation.addedNodes, ...mutation.removedNodes].every(node => (
 				!(node instanceof Element)
 					|| node.classList.contains('github-inbox-tuner-collapse-toggle')
+					|| node.classList.contains('github-inbox-tuner-collapse-chevron')
 					|| node.classList.contains('github-inbox-tuner-view-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-repository-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-bulk-dialog')

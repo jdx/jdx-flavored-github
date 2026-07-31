@@ -319,7 +319,58 @@ assert.match(contentSource, /updateQueryListCollapses/);
 assert.match(contentSource, /scheduleQueryListCollapseRefresh/);
 assert.match(contentSource, /github-inbox-tuner-query-member--collapsed/);
 assert.match(contentSource, /getQueryListItemAuthor/);
+assert.match(contentSource, /getCachedMetadata/);
+assert.match(contentSource, /loadMetadata/);
+assert.match(contentSource, /function decorateCachedQueryListCollapses\(surface: Surface\)/);
+assert.match(contentSource, /generation\+\+;\s*decorateCachedQueryListCollapses\(surface\);/s);
+assert.match(contentSource, /findStackComponents\(stackItems\)/);
+assert.match(contentSource, /orderStackItems\(component\)/);
+assert.match(contentSource, /more \$\{stack\.length === 2 \? 'PR' : 'PRs'\} in stack/);
+assert.match(contentSource, /event\.preventDefault\(\)/);
+assert.match(contentSource, /event\.stopPropagation\(\)/);
+assert.match(contentSource, /representative\.row\.after\(button\)/);
+assert.match(contentSource, /representative\.row\.append\(chevron\)/);
+assert.match(contentSource, /github-inbox-tuner-query-representative/);
+assert.match(contentSource, /notification-list-item-link/);
+assert.match(contentSource, /notification-list-item-link'\)\?\.after\(chevron\)/);
+assert.match(contentSource, /github-inbox-tuner-collapse-chevron/);
+assert.match(contentSource, /github-inbox-tuner-list-check-status/);
 assert.match(contentCssSource, /\.github-inbox-tuner-query-member--collapsed/);
+assert.match(
+	contentCssSource,
+	/\.github-inbox-tuner-query-member--expanded\s*\{[^}]*background:\s*linear-gradient\([^}]*14px 16px[^}]*border-left:\s*0 !important;[^}]*margin-left:\s*0 !important;[^}]*width:\s*100% !important;/s,
+);
+assert.match(
+	contentCssSource,
+	/\.github-inbox-tuner-query-member--expanded > \.Box-row--drag-hide\s*\{[^}]*margin-left:\s*16px;[^}]*width:\s*calc\(100% - 16px\);/s,
+);
+assert.match(contentCssSource, /\.github-inbox-tuner-list-collapse-chevron\s*\{[^}]*font-size:\s*14px;[^}]*height:\s*24px;[^}]*position:\s*absolute;[^}]*right:\s*44px;[^}]*top:\s*8px;[^}]*width:\s*24px;/s);
+assert.match(
+	contentCssSource,
+	/\.github-inbox-tuner-collapse-toggle\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*width:\s*100%;/s,
+);
+assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder\s*\{[^}]*border-bottom:\s*1px solid[^}]*height:\s*10px;[^}]*width:\s*100%;/s);
+assert.match(contentSource, /github-inbox-tuner-collapse-placeholders/);
+assert.match(contentSource, /Math\.min\(group\.length - 1, 5\)/);
+assert.match(contentSource, /github-inbox-tuner-collapse-member--expanded/);
+assert.match(contentSource, /github-inbox-tuner-query-member--expanded/);
+assert.match(contentSource, /Collapse dependency updates by/);
+assert.doesNotMatch(contentSource, /Collapse nested items/);
+assert.match(contentSource, /pullRequestMetadataStorageKey = 'pullRequestMetadataCache'/);
+assert.match(contentSource, /hydratePullRequestMetadataCache\(\)/);
+assert.match(contentSource, /persistPullRequestMetadataCache\(\)/);
+assert.match(contentSource, /complete: false/);
+assert.match(contentSource, /getCachedPullRequestGroupingMetadata/);
+assert.match(contentSource, /decorateNotificationGroups\(cachedItems\)/);
+assert.match(contentSource, /function decorateCachedNotificationStacks\(\)/);
+assert.match(contentSource, /notificationStackGeneration\+\+;\s*decorateCachedNotificationStacks\(\);/s);
+assert.match(contentCssSource, /\.github-inbox-tuner-collapse-toggle\.github-inbox-tuner-collapse-toggle--expanded\s*\{[^}]*display:\s*none !important;/s);
+assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder/);
+assert.match(
+	contentCssSource,
+	/\.github-inbox-tuner-list-collapse-toggle\s*\{[^}]*background:\s*var\(--bgColor-muted, var\(--color-canvas-subtle\)\);[^}]*display:\s*grid;/s,
+);
+assert.match(contentCssSource, /\.github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentCssSource, /\.notifications-list-item\.github-inbox-tuner-revealed/);
 assert.match(contentCssSource, /\.github-inbox-tuner-editor-workspace/);
 assert.match(contentCssSource, /\.github-inbox-tuner-editor-help/);
