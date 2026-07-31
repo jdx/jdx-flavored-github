@@ -1,6 +1,17 @@
 import type {NotificationFacts} from '../shared/types.js';
 import type {PullRequestReference} from './pull-request-metadata.js';
 
+export function filterNotificationRowsForFolder<
+	T extends {classList: {contains: (token: string) => boolean}},
+>(
+	rows: Iterable<T>,
+	includeArchived: boolean,
+): T[] {
+	return [...rows].filter(row => (
+		includeArchived || !row.classList.contains('notification-archived')
+	));
+}
+
 export function getNotificationRepository(element?: Element): string | undefined {
 	const itemLink = element?.classList.contains('notifications-list-item')
 		? element.querySelector<HTMLAnchorElement>('.notification-list-item-link[href]')

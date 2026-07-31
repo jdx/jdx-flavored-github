@@ -19,6 +19,7 @@ import {
 	orderStackItems,
 } from './grouping.js';
 import {
+	filterNotificationRowsForFolder,
 	getNotificationFacts,
 	getNotificationRepository,
 	getPullRequestReference,
@@ -256,16 +257,20 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		if (!getViews('notifications').some(view => view.id === activeNotificationView)) {
 			activeNotificationView = getViews('notifications')[0].id;
 		}
-		const rows = document.querySelectorAll<HTMLElement>('.notifications-list-item');
-		for (const row of rows) {
+		const allRows = document.querySelectorAll<HTMLElement>('.notifications-list-item');
+		for (const row of allRows) {
 			applyCachedPullRequestFacts(row);
 			applyCachedPullRequestLabelFacts(row);
 			classifyNotification(row);
 		}
+		const rows = filterNotificationRowsForFolder(
+			allRows,
+			showsArchivedNotifications(),
+		);
 
 		updateViewBar('notifications');
 		updateFilteredDisclosures(rows);
-		updateRepositoryBulkActions(rows);
+		updateRepositoryBulkActions(allRows, rows);
 		updateRepositoryViewActions(rows);
 		scheduleFailedChecksRefresh();
 		scheduleNotificationStackRefresh();
@@ -593,8 +598,12 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			classifyNotification(row);
 		}
 
+		const currentFolderRows = filterNotificationRowsForFolder(
+			rows,
+			showsArchivedNotifications(),
+		);
 		updateViewBar('notifications');
-		updateFilteredDisclosures(rows);
+		updateFilteredDisclosures(currentFolderRows);
 	}
 
 	function scheduleFailedChecksRefresh() {
@@ -1719,8 +1728,14 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		};
 	}
 
-	function updateRepositoryBulkActions(rows) {
-		const lists = new Set([...rows].map(row => row.parentElement));
+	function updateRepositoryBulkActions(allRows, rows) {
+		const rowsByList = new Map();
+		for (const row of rows) {
+			const listRows = rowsByList.get(row.parentElement) ?? [];
+			listRows.push(row);
+			rowsByList.set(row.parentElement, listRows);
+		}
+		const lists = new Set([...allRows].map(row => row.parentElement));
 		for (const list of lists) {
 			const repository = getNotificationRepository(list);
 			const group = list.closest('.js-notifications-group')
@@ -1733,10 +1748,11 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			}
 			const existing = group.querySelector('.github-inbox-tuner-repository-bulk-actions');
 			const rules = getNotificationRules(repository);
+			const listRows = rowsByList.get(list) ?? [];
 			const entries = rules.flatMap(rule => (rule.actions ?? []).map(action => ({
 				action,
 				surface: 'notifications',
-				targets: [...list.querySelectorAll('.notifications-list-item')]
+				targets: listRows
 					.filter(row => matchesNotificationExpression(row, rule, rules))
 					.map(row => getBulkTarget(row, 'notifications'))
 					.filter(Boolean),
@@ -2548,7 +2564,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			return;
 		}
 		const targets = surface === 'notifications'
-			? [...document.querySelectorAll('.notifications-list-item')]
+			? filterNotificationRowsForFolder(
+				document.querySelectorAll('.notifications-list-item'),
+				showsArchivedNotifications(),
+			)
 				.filter(row => matchesNotificationExpression(
 					row,
 					view,
@@ -2622,11 +2641,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		}
 		updateViewBulkActions(bar, surface, activeViewId);
 		if (surface === 'notifications') {
-			const rows = [...document.querySelectorAll('.notifications-list-item')]
-				.filter(row => (
-					showsArchivedNotifications()
-					|| !row.classList.contains('notification-archived')
-				));
+			const rows = filterNotificationRowsForFolder(
+				document.querySelectorAll('.notifications-list-item'),
+				showsArchivedNotifications(),
+			);
 			for (const view of surfaceViews) {
 				const count = rows.filter(row => matchesNotificationView(row, view.id)).length;
 				updateViewChipCount(
