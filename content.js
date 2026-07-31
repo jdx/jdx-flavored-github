@@ -28,6 +28,7 @@
 	let headerSettingsRefresh;
 	let notificationStackRefresh;
 	let notificationStackGeneration = 0;
+	let notificationViewRefresh;
 	let queryListCollapseRefresh;
 	let recentNotificationsAlertRefresh;
 	let recentNotificationsAlertRefreshInFlight;
@@ -87,6 +88,14 @@
 
 	function isNotificationsPage() {
 		return location.pathname === '/notifications';
+	}
+
+	function showsArchivedNotifications() {
+		const url = new URL(location.href);
+		const query = url.searchParams.get('query')
+			?? url.searchParams.get('q')
+			?? '';
+		return /(?:^|\s)is:(?:done|saved)(?:\s|$)/i.test(query);
 	}
 
 	function isPullRequestList() {
@@ -511,6 +520,16 @@
 		scheduleFailedChecksRefresh();
 		scheduleNotificationStackRefresh();
 		scheduleRecentNotificationsAlertRefresh();
+	}
+
+	function scheduleNotificationViewRefresh(delay = 100) {
+		clearTimeout(notificationViewRefresh);
+		notificationViewRefresh = setTimeout(() => {
+			notificationViewRefresh = undefined;
+			if (isNotificationsPage()) {
+				updateNotificationVisibility();
+			}
+		}, delay);
 	}
 
 	function getPullRequestReference(row) {
@@ -2990,7 +3009,11 @@
 		}
 		updateViewBulkActions(bar, surface, activeViewId);
 		if (surface === 'notifications') {
-			const rows = [...document.querySelectorAll('.notifications-list-item')];
+			const rows = [...document.querySelectorAll('.notifications-list-item')]
+				.filter(row => (
+					showsArchivedNotifications()
+					|| !row.classList.contains('notification-archived')
+				));
 			for (const view of surfaceViews) {
 				const count = rows.filter(row => matchesNotificationView(row, view.id)).length;
 				updateViewChipCount(
@@ -3131,6 +3154,25 @@
 		event.stopPropagation();
 		void chrome.runtime.sendMessage({type: 'open-options'});
 	}, true);
+	document.addEventListener('click', event => {
+		if (!isNotificationsPage() || !(event.target instanceof Element)) {
+			return;
+		}
+		const control = event.target.closest(
+			'button[aria-label="Done"], '
+			+ '.js-grouped-notifications-mark-all-read-button button',
+		);
+		if (
+			!control
+			|| (
+				control.getAttribute('aria-label') !== 'Done'
+				&& !/^(Mark as done|Open unread)$/i.test(control.textContent.trim())
+			)
+		) {
+			return;
+		}
+		scheduleNotificationViewRefresh(750);
+	}, true);
 	document.addEventListener('visibilitychange', () => {
 		if (document.visibilityState === 'visible') {
 			scheduleGlobalIndicatorRefresh();
@@ -3169,6 +3211,25 @@
 			scheduleGlobalIndicatorRefresh(true);
 		}
 
+		const notificationStateChanged = mutations.some(mutation => {
+			if (
+				mutation.type !== 'attributes'
+				|| mutation.attributeName !== 'class'
+				|| !(mutation.target instanceof Element)
+				|| !mutation.target.matches('.notifications-list-item')
+			) {
+				return false;
+			}
+			const oldClasses = new Set((mutation.oldValue ?? '').split(/\s+/));
+			return ['notification-archived', 'notification-unread'].some(
+				className => oldClasses.has(className)
+					!== mutation.target.classList.contains(className),
+			);
+		});
+		if (notificationStateChanged) {
+			scheduleNotificationViewRefresh();
+		}
+
 		if (childListMutations.length === 0 || onlyExtensionControlsChanged) {
 			return;
 		}
@@ -3188,6 +3249,7 @@
 	});
 	observer.observe(document, {
 		attributeFilter: ['class'],
+		attributeOldValue: true,
 		attributes: true,
 		childList: true,
 		subtree: true,

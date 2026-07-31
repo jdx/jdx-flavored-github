@@ -229,6 +229,9 @@ assert.match(optionsSource, /showHeaderSettingsButton: 'show-header-settings-but
 assert.match(optionsHtmlSource, /id="show-header-settings-button"/);
 assert.match(contentSource, /chip\.hidden = count === 0 && chip\.dataset\.viewId !== activeViewId/);
 assert.match(contentSource, /updateViewChipCount/);
+assert.match(contentSource, /showsArchivedNotifications/);
+assert.match(contentSource, /scheduleNotificationViewRefresh/);
+assert.match(contentSource, /attributeOldValue: true/);
 assert.match(contentSource, /!className\.includes\('notificationIndicator'\)/);
 assert.match(contentCssSource, /\.github-inbox-tuner-settings-icon/);
 assert.match(contentSource, /list\.closest\('\.js-notifications-group'\)/);
