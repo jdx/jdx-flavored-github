@@ -10,27 +10,26 @@ Issues pages into focused, saved views.
 It works on GitHub’s existing pages, uses your existing session, and does not
 require an API token or background polling.
 
-## What it does
+## Focus on the work that needs you
 
-### A quieter notification inbox
+**Focused** is the default notification view. It cuts common noise such as
+drafts, team mentions, and blocked work on someone else’s PR while keeping your
+own failing, pending, or conflicting PRs in view.
 
-- Adds count-bearing views such as **Focused**, **Mentions**, and
-  **My failing PRs**.
-- Hides zero-count views while keeping the active view visible.
-- Filters drafts, team mentions, failing or pending checks on other people’s
-  PRs, and merge conflicts on other people’s PRs from the default Focused view.
-- Always lets direct mentions through.
-- Keeps closed and merged notifications available so they can be marked Done
-  without suppressing future activity.
-- Shows check status next to the PR number and uses a distinct red icon for
-  merge conflicts.
-- Collapses PR stacks and dependency updates behind inline expanders.
-- Explains filtered items with per-repository reason pills.
+Focused is a normal editable rule, not a special mode. Its shipped definition
+prioritizes direct mentions, but every part of that behavior can be changed in
+the view editor.
 
-### Views you can change
+The notification page also gains PR check and merge-conflict status,
+per-repository explanations for filtered items, and collapsible groups for
+related notifications. Pull Request and Issue lists support the same
+collapsible author and dependency-update groups.
 
-Views can be edited directly on GitHub with the compact master/detail editor.
-They support three inheritance levels:
+## Make it yours
+
+Build count-bearing views for Notifications, Pull Requests, and Issues, choose
+the default for each page, and edit them without leaving GitHub. Views support
+three inheritance levels:
 
 ```text
 Global → user or organization → repository
@@ -41,7 +40,7 @@ Removing an override resumes inheritance from its parent.
 
 Settings sync through Chrome. They can also be exported and imported as JSON.
 
-### Previewed bulk actions
+## Act on a whole view
 
 Rules and views can define named actions for:
 

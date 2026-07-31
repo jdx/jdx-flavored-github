@@ -23,7 +23,8 @@ or requiring an API token.
 - Includes a boolean notification DSL with composable named rules and uses
   GitHub search syntax for PR and issue view definitions.
 - Hides draft and team-mention notification noise.
-- Prioritizes direct @username mentions above every suppression rule.
+- Ships a Focused rule that prioritizes direct @username mentions and remains
+  fully editable.
 - Gates GitHub's global unread dot and live new-notification banner with the
   selected global default notification view.
 - Keeps closure notifications available for deliberate inbox triage.

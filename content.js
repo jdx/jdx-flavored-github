@@ -28,6 +28,7 @@
 	let headerSettingsRefresh;
 	let notificationStackRefresh;
 	let notificationStackGeneration = 0;
+	let queryListCollapseRefresh;
 	let recentNotificationsAlertRefresh;
 	let recentNotificationsAlertRefreshInFlight;
 	let viewBarResizeObserver;
@@ -1304,7 +1305,7 @@
 	}
 
 	function isDependencyUpdateAuthor(author) {
-		return /^(?:dependabot|renovate)(?:\[bot\]|-bot)?$/i.test(author);
+		return /^(?:app\/)?(?:dependabot|renovate)(?:\[bot\]|-bot)?$/i.test(author);
 	}
 
 	function findAuthorComponents(items) {
@@ -1507,6 +1508,126 @@
 		notificationStackRefresh = setTimeout(() => {
 			void updateNotificationStacks();
 		}, 350);
+	}
+
+	function getQueryListItemAuthor(row) {
+		const hovercard = [...row.querySelectorAll('a[data-hovercard-url^="/users/"]')]
+			.map(link => link.getAttribute('data-hovercard-url'))
+			.find(Boolean);
+		const hovercardMatch = hovercard?.match(/^\/users\/([^/]+)\/hovercard/);
+		if (hovercardMatch) {
+			return decodeURIComponent(hovercardMatch[1]);
+		}
+		for (const link of row.querySelectorAll('a[href*="author"]')) {
+			const query = new URL(link.getAttribute('href'), location.origin)
+				.searchParams.get('q');
+			const author = query?.match(/(?:^|\s)author:([^\s]+)/i)?.[1];
+			if (author) {
+				return author.replace(/^app\//i, '');
+			}
+		}
+	}
+
+	function decorateQueryCollapsedGroup(group, surface, author) {
+		const representative = group[0];
+		const signature = `${location.pathname}:${surface}:author:${author.toLowerCase()}:${group
+			.map(item => `${item.repository}#${item.number}`)
+			.sort()
+			.join(',')}`;
+		const button = document.createElement('button');
+		button.className = 'github-inbox-tuner-collapse-toggle github-inbox-tuner-list-collapse-toggle';
+		button.type = 'button';
+		const icon = document.createElement('span');
+		icon.className = 'github-inbox-tuner-collapse-icon';
+		const text = document.createElement('span');
+		const itemLabel = surface === 'pulls' ? 'PRs' : 'issues';
+		text.textContent = isDependencyUpdateAuthor(author)
+			? `${group.length} dependency updates`
+			: `${group.length} ${itemLabel} by ${author}`;
+		button.append(icon, text);
+
+		const updateExpandedState = expanded => {
+			representative.row.classList.toggle(
+				'github-inbox-tuner-collapse-representative--expanded',
+				expanded,
+			);
+			button.setAttribute('aria-expanded', String(expanded));
+			button.title = expanded
+				? `Collapse these ${itemLabel}`
+				: `Expand ${group.length} ${itemLabel}`;
+			for (const {row} of group) {
+				row.classList.toggle(
+					'github-inbox-tuner-query-member--collapsed',
+					row !== representative.row && !expanded,
+				);
+			}
+		};
+		button.addEventListener('click', () => {
+			const expanded = !expandedNotificationStacks.has(signature);
+			if (expanded) {
+				expandedNotificationStacks.add(signature);
+			} else {
+				expandedNotificationStacks.delete(signature);
+			}
+			updateExpandedState(expanded);
+		});
+		updateExpandedState(expandedNotificationStacks.has(signature));
+		const title = representative.row.querySelector(
+			'.markdown-title, [data-testid="issue-row-title-link"]',
+		) ?? [...representative.row.querySelectorAll('a[href]')].find(link => (
+			/^\/[^/]+\/[^/]+\/(?:pull|issues)\/\d+/.test(
+				new URL(link.getAttribute('href'), location.origin).pathname,
+			)
+		));
+		title?.after(button);
+	}
+
+	function updateQueryListCollapses(surface) {
+		if (!['pulls', 'issues'].includes(surface)) {
+			return;
+		}
+		for (const toggle of document.querySelectorAll(
+			'.github-inbox-tuner-list-collapse-toggle',
+		)) {
+			toggle.remove();
+		}
+		for (const row of document.querySelectorAll(
+			'.github-inbox-tuner-query-member--collapsed',
+		)) {
+			row.classList.remove('github-inbox-tuner-query-member--collapsed');
+		}
+		const groups = new Map();
+		for (const target of getListBulkTargets(surface)) {
+			if (target.row.closest('[aria-label*="pinned issues" i]')) {
+				continue;
+			}
+			const author = getQueryListItemAuthor(target.row);
+			if (
+				!author
+				|| (
+					!options.collapseSameAuthorNotifications
+					&& !(options.collapseDependencyUpdates && isDependencyUpdateAuthor(author))
+				)
+			) {
+				continue;
+			}
+			const key = author.toLowerCase();
+			const group = groups.get(key) ?? [];
+			group.push({...target, author});
+			groups.set(key, group);
+		}
+		for (const group of groups.values()) {
+			if (group.length > 1) {
+				decorateQueryCollapsedGroup(group, surface, group[0].author);
+			}
+		}
+	}
+
+	function scheduleQueryListCollapseRefresh(surface) {
+		clearTimeout(queryListCollapseRefresh);
+		queryListCollapseRefresh = setTimeout(() => {
+			updateQueryListCollapses(surface);
+		}, 250);
 	}
 
 	function updateFilteredDisclosures(rows) {
@@ -2952,6 +3073,7 @@
 		if (surface) {
 			redirectToDefaultView(surface);
 			updateViewBar(surface);
+			scheduleQueryListCollapseRefresh(surface);
 		}
 	}
 
@@ -3031,8 +3153,11 @@
 		}
 
 		const surface = getSurface();
-		if (surface && !document.querySelector('#github-inbox-tuner-views')) {
-			updateViewBar(surface);
+		if (surface) {
+			if (!document.querySelector('#github-inbox-tuner-views')) {
+				updateViewBar(surface);
+			}
+			scheduleQueryListCollapseRefresh(surface);
 		}
 	});
 	observer.observe(document, {

@@ -6,6 +6,10 @@
 	display: none !important;
 }
 
+.github-inbox-tuner-query-member--collapsed {
+	display: none !important;
+}
+
 .notifications-list-item.github-inbox-tuner-dimmed {
 	opacity: 0.58;
 }
@@ -89,9 +93,9 @@
 	margin: 0 0 12px;
 	max-width: 100% !important;
 	min-width: 0;
-	min-height: 30px;
+	min-height: 36px;
 	overflow: visible !important;
-	padding: 2px 0 !important;
+	padding: 2px 0 8px !important;
 	width: 100% !important;
 }
 
@@ -120,7 +124,7 @@
 	flex-wrap: wrap !important;
 	height: auto !important;
 	overflow: visible !important;
-	padding-block: 2px !important;
+	padding: 2px 0 8px !important;
 }
 
 .github-inbox-tuner-view-chip {
