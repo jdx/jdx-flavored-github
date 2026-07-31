@@ -321,13 +321,14 @@ assert.match(contentSource, /findStackComponents\(stackItems\)/);
 assert.match(contentSource, /more \$\{stack\.length === 2 \? 'PR' : 'PRs'\} in stack/);
 assert.match(contentSource, /event\.preventDefault\(\)/);
 assert.match(contentSource, /event\.stopPropagation\(\)/);
-assert.match(contentSource, /metadataLine\.before\(button\)/);
+assert.match(contentSource, /representative\.row\.after\(button\)/);
 assert.match(contentSource, /github-inbox-tuner-list-check-status/);
 assert.match(contentCssSource, /\.github-inbox-tuner-query-member--collapsed/);
 assert.match(
 	contentCssSource,
-	/\.github-inbox-tuner-list-collapse-toggle\s*\{[^}]*height:\s*24px;[^}]*width:\s*100%;/s,
+	/\.github-inbox-tuner-collapse-toggle\s*\{[^}]*grid-template-columns:\s*18px minmax\(0, 1fr\);[^}]*width:\s*100%;/s,
 );
+assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder\s*\{[^}]*height:\s*8px;[^}]*width:\s*100%;/s);
 assert.match(contentSource, /github-inbox-tuner-collapse-placeholders/);
 assert.match(contentSource, /github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentSource, /github-inbox-tuner-query-member--expanded/);

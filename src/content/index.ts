@@ -987,9 +987,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			placeholder.className = 'github-inbox-tuner-collapse-placeholder';
 			placeholders.append(placeholder);
 		}
-		const text = document.createElement('span');
-		text.textContent = label;
-		button.append(icon, placeholders, text);
+		button.append(icon, placeholders);
 
 		const updateExpandedState = expanded => {
 			representative.row.classList.toggle(
@@ -997,7 +995,14 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
-			text.textContent = expanded ? expandedLabel : label;
+			button.setAttribute(
+				'aria-label',
+				expanded ? expandedLabel : `Expand ${group.length} related pull requests; ${label}`,
+			);
+			button.classList.toggle(
+				'github-inbox-tuner-collapse-toggle--expanded',
+				expanded,
+			);
 			button.title = expanded
 				? expandedLabel
 				: `Expand ${group.length} related pull request notifications`;
@@ -1022,9 +1027,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			updateExpandedState(expanded);
 		});
 		updateExpandedState(expandedNotificationStacks.has(signature));
-		const title = representative.row.querySelector('.markdown-title');
-		const statuses = representative.row.querySelector('.github-inbox-tuner-statuses');
-		(statuses ?? title)?.after(button);
+		representative.row.after(button);
 	}
 
 	function clearNotificationStackDecorations(root) {

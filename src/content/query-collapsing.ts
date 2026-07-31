@@ -101,9 +101,7 @@ export function createQueryListCollapsing({
 			placeholder.className = 'github-inbox-tuner-collapse-placeholder';
 			placeholders.append(placeholder);
 		}
-		const text = document.createElement('span');
-		text.textContent = collapsedLabel;
-		button.append(icon, placeholders, text);
+		button.append(icon, placeholders);
 
 		const updateExpandedState = (expanded: boolean) => {
 			representative.row.classList.toggle(
@@ -111,7 +109,16 @@ export function createQueryListCollapsing({
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
-			text.textContent = expanded ? expandedLabel : collapsedLabel;
+			button.setAttribute(
+				'aria-label',
+				expanded
+					? expandedLabel
+					: `Expand ${group.length} related ${surface === 'pulls' ? 'pull requests' : 'issues'}; ${collapsedLabel}`,
+			);
+			button.classList.toggle(
+				'github-inbox-tuner-collapse-toggle--expanded',
+				expanded,
+			);
 			button.title = expanded
 				? expandedLabel
 				: `Expand ${group.length} related ${surface === 'pulls' ? 'pull requests' : 'issues'}`;
@@ -138,18 +145,7 @@ export function createQueryListCollapsing({
 			updateExpandedState(expanded);
 		});
 		updateExpandedState(expandedGroups.has(signature));
-		const title = representative.row.querySelector(
-			'.markdown-title, [data-testid="issue-row-title-link"]',
-		) ?? [...representative.row.querySelectorAll<HTMLAnchorElement>('a[href]')].find(link => (
-			/^\/[^/]+\/[^/]+\/(?:pull|issues)\/\d+/.test(link.pathname)
-		));
-		const titleLine = title?.parentElement;
-		const metadataLine = titleLine?.querySelector(':scope > .d-flex.mt-1');
-		if (metadataLine) {
-			metadataLine.before(button);
-		} else {
-			title?.after(button);
-		}
+		representative.row.after(button);
 	}
 
 	function decorateQueryGroups(items: QueryItem[], surface: Surface) {

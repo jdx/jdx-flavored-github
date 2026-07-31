@@ -59,39 +59,29 @@
 
 .github-inbox-tuner-collapse-toggle {
 	align-items: center;
-	background: var(--bgColor-muted, var(--color-canvas-subtle));
-	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
-	border-radius: 6px;
+	appearance: none;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-sizing: border-box;
 	color: var(--fgColor-muted, var(--color-fg-muted));
 	cursor: pointer;
-	display: inline-flex;
-	font: inherit;
-	font-size: 11px;
-	font-weight: 600;
-	gap: 6px;
-	line-height: 18px;
-	margin: 6px 0 0 6px;
-	min-height: 28px;
-	padding: 4px 8px;
-	vertical-align: baseline;
-	white-space: nowrap;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: 18px minmax(0, 1fr);
+	margin: 0;
+	min-height: 0;
+	padding: 2px 12px;
+	width: 100%;
 }
 
 .github-inbox-tuner-collapse-toggle:hover {
 	background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
-	border-color: var(--borderColor-default, var(--color-border-default));
 	text-decoration: none;
 }
 
 .github-inbox-tuner-list-collapse-toggle {
-	box-sizing: border-box;
-	display: flex;
-	height: 24px;
-	justify-content: flex-start;
-	margin: 4px 0 0;
-	min-height: 24px;
-	padding: 2px 8px;
-	width: 100%;
+	display: grid;
 }
 
 .github-inbox-tuner-list-check-status {
@@ -122,6 +112,8 @@
 }
 
 .github-inbox-tuner-collapse-representative--expanded
+	.github-inbox-tuner-collapse-icon::before,
+.github-inbox-tuner-collapse-toggle--expanded
 	.github-inbox-tuner-collapse-icon::before {
 	transform: rotate(90deg);
 }
@@ -129,26 +121,31 @@
 .github-inbox-tuner-collapse-placeholders {
 	display: grid;
 	gap: 2px;
-	width: 34px;
+	width: 100%;
 }
 
 .github-inbox-tuner-collapse-placeholder {
-	background: var(--fgColor-muted, var(--color-fg-muted));
-	border-radius: 2px;
+	background: var(--bgColor-muted, var(--color-canvas-subtle));
+	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 3px;
+	box-sizing: border-box;
 	display: block;
-	height: 4px;
-	opacity: 0.45;
+	height: 8px;
+	opacity: 0.72;
+	width: 100%;
 }
 
 .github-inbox-tuner-collapse-placeholder:nth-child(2) {
-	width: 84%;
+	width: 100%;
 }
 
 .github-inbox-tuner-collapse-placeholder:nth-child(3) {
-	width: 68%;
+	width: 100%;
 }
 
 .github-inbox-tuner-collapse-representative--expanded
+	.github-inbox-tuner-collapse-placeholders,
+.github-inbox-tuner-collapse-toggle--expanded
 	.github-inbox-tuner-collapse-placeholders {
 	display: none;
 }
@@ -809,9 +806,14 @@
 
 .github-inbox-tuner-check-status {
 	align-items: center;
-	display: inline-flex;
+	display: inline-flex !important;
+	flex: 0 0 20px;
+	justify-content: center;
 	margin-left: 6px;
+	margin-right: 5px;
+	min-width: 20px;
 	vertical-align: baseline;
+	width: 20px;
 }
 
 .github-inbox-tuner-original-pr-icon--hidden {
@@ -843,7 +845,8 @@
 	font-weight: 700;
 	justify-content: center;
 	line-height: 1;
-	min-width: 12px;
+	min-width: 16px;
+	width: 16px;
 }
 
 .github-inbox-tuner-status--check::before {
