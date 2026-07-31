@@ -325,7 +325,7 @@ assert.match(contentSource, /more \$\{stack\.length === 2 \? 'PR' : 'PRs'\} in s
 assert.match(contentSource, /event\.preventDefault\(\)/);
 assert.match(contentSource, /event\.stopPropagation\(\)/);
 assert.match(contentSource, /representative\.row\.after\(button\)/);
-assert.match(contentSource, /title\?\.before\(chevron\)/);
+assert.match(contentSource, /primaryContent\?\.after\(chevron\)/);
 assert.match(contentSource, /notification-list-item-link/);
 assert.match(contentSource, /notification-list-item-link'\)\?\.after\(chevron\)/);
 assert.match(contentSource, /github-inbox-tuner-collapse-chevron/);

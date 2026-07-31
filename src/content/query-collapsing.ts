@@ -185,7 +185,9 @@ export function createQueryListCollapsing({
 		) ?? [...representative.row.querySelectorAll<HTMLAnchorElement>('a[href]')].find(link => (
 			/^\/[^/]+\/[^/]+\/(?:pull|issues)\/\d+/.test(link.pathname)
 		));
-		title?.before(chevron);
+		const primaryContent = title?.closest('.flex-auto.min-width-0')
+			?? title?.parentElement;
+		primaryContent?.after(chevron);
 		representative.row.after(button);
 	}
 
