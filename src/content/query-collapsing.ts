@@ -126,7 +126,9 @@ export function createQueryListCollapsing({
 				);
 			}
 		};
-		button.addEventListener('click', () => {
+		button.addEventListener('click', event => {
+			event.preventDefault();
+			event.stopPropagation();
 			const expanded = !expandedGroups.has(signature);
 			if (expanded) {
 				expandedGroups.add(signature);
@@ -141,7 +143,13 @@ export function createQueryListCollapsing({
 		) ?? [...representative.row.querySelectorAll<HTMLAnchorElement>('a[href]')].find(link => (
 			/^\/[^/]+\/[^/]+\/(?:pull|issues)\/\d+/.test(link.pathname)
 		));
-		title?.after(button);
+		const titleLine = title?.parentElement;
+		const metadataLine = titleLine?.querySelector(':scope > .d-flex.mt-1');
+		if (metadataLine) {
+			metadataLine.before(button);
+		} else {
+			title?.after(button);
+		}
 	}
 
 	function decorateQueryGroups(items: QueryItem[], surface: Surface) {
@@ -230,6 +238,10 @@ export function createQueryListCollapsing({
 			...target,
 			author: getQueryListItemAuthor(target.row),
 		}));
+		for (const {row} of items) {
+			row.querySelector('.commit-build-statuses')?.parentElement
+				?.classList.add('github-inbox-tuner-list-check-status');
+		}
 		if (surface !== 'pulls') {
 			decorateQueryGroups(items, surface);
 			return;

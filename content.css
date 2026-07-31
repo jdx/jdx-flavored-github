@@ -83,6 +83,33 @@
 	text-decoration: none;
 }
 
+.github-inbox-tuner-list-collapse-toggle {
+	box-sizing: border-box;
+	display: flex;
+	height: 24px;
+	justify-content: flex-start;
+	margin: 4px 0 0;
+	min-height: 24px;
+	padding: 2px 8px;
+	width: 100%;
+}
+
+.github-inbox-tuner-list-check-status {
+	align-items: center;
+	display: inline-flex !important;
+	flex: 0 0 22px;
+	justify-content: center;
+	margin-left: 4px;
+	min-width: 22px;
+	width: 22px;
+}
+
+.github-inbox-tuner-list-check-status .commit-build-statuses,
+.github-inbox-tuner-list-check-status .commit-build-statuses > summary {
+	flex: 0 0 16px;
+	min-width: 16px;
+}
+
 .github-inbox-tuner-collapse-toggle:focus-visible {
 	outline: 2px solid var(--focus-outlineColor, var(--color-accent-fg));
 	outline-offset: 2px;
