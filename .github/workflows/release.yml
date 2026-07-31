@@ -2,6 +2,11 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing draft release tag to package and publish
+        required: false
+        type: string
   push:
     branches:
       - main
@@ -21,8 +26,8 @@ jobs:
       contents: write
       pull-requests: write
     outputs:
-      release-created: ${{ steps.release.outputs.release_created }}
-      tag-name: ${{ steps.release.outputs.tag_name }}
+      package-ready: ${{ steps.target.outputs.ready }}
+      tag-name: ${{ steps.target.outputs.tag_name }}
     steps:
       - name: Open or update release pull request
         id: release
@@ -30,11 +35,32 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      - name: Resolve release to package
+        id: target
+        env:
+          CREATED_TAG: ${{ steps.release.outputs.tag_name }}
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_TAG: ${{ inputs.tag }}
+        run: |
+          tag_name="$CREATED_TAG"
+          if [ -z "$tag_name" ]; then
+            tag_name="$REQUESTED_TAG"
+          fi
+          if [ -z "$tag_name" ]; then
+            tag_name="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+              --jq 'map(select(.draft and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$")))) | sort_by(.created_at) | last | .tag_name // empty')"
+          fi
+          if [ -n "$tag_name" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "tag_name=$tag_name" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
 
   package:
     name: Package extension
     needs: release-please
-    if: needs.release-please.outputs.release-created == 'true'
+    if: needs.release-please.outputs.package-ready == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

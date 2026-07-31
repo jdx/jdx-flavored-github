@@ -180,7 +180,11 @@ const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionRoo
 const packageManifest = JSON.parse(
 	await readFile(new URL('package.json', extensionRoot), 'utf8'),
 );
-assert.equal(manifest.version, '0.1.0');
+const releaseManifest = JSON.parse(
+	await readFile(new URL('.release-please-manifest.json', extensionRoot), 'utf8'),
+);
+assert.match(manifest.version, /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/);
+assert.equal(manifest.version, releaseManifest['.']);
 assert.equal(packageManifest.packageManager, 'aube@1.36.0');
 assert.deepEqual(
 	manifest.content_scripts[0].js,
