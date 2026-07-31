@@ -4,6 +4,8 @@
 
 # jdx Flavored GitHub
 
+<img width="714" height="564" alt="Screenshot 2026-07-31 at 01 04 30" src="https://github.com/user-attachments/assets/8b9b7b5a-2142-4500-be68-adc5818f863d" />
+
 A Chrome extension for turning GitHub’s Notifications, Pull Requests, and
 Issues pages into focused, saved views.
 
