@@ -67,12 +67,15 @@
 	color: var(--fgColor-muted, var(--color-fg-muted));
 	cursor: pointer;
 	display: grid;
-	gap: 8px;
-	grid-template-columns: 18px minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr);
 	margin: 0;
 	min-height: 0;
 	padding: 2px 12px;
 	width: 100%;
+}
+
+.github-inbox-tuner-collapse-toggle--expanded {
+	display: none;
 }
 
 .github-inbox-tuner-collapse-toggle:hover {
@@ -105,15 +108,40 @@
 	outline-offset: 2px;
 }
 
+.github-inbox-tuner-collapse-chevron {
+	align-items: center;
+	appearance: none;
+	background: transparent;
+	border: 0;
+	border-radius: 3px;
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	cursor: pointer;
+	display: inline-flex;
+	flex: 0 0 18px;
+	height: 18px;
+	justify-content: center;
+	margin: 0 4px 0 0;
+	padding: 0;
+	vertical-align: middle;
+	width: 18px;
+}
+
+.github-inbox-tuner-collapse-chevron:hover {
+	background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
+}
+
+.github-inbox-tuner-collapse-chevron:focus-visible {
+	outline: 2px solid var(--focus-outlineColor, var(--color-accent-fg));
+	outline-offset: 1px;
+}
+
 .github-inbox-tuner-collapse-icon::before {
 	content: "▸";
 	display: inline-block;
 	transition: transform 100ms ease;
 }
 
-.github-inbox-tuner-collapse-representative--expanded
-	.github-inbox-tuner-collapse-icon::before,
-.github-inbox-tuner-collapse-toggle--expanded
+.github-inbox-tuner-collapse-chevron[aria-expanded="true"]
 	.github-inbox-tuner-collapse-icon::before {
 	transform: rotate(90deg);
 }
@@ -141,13 +169,6 @@
 
 .github-inbox-tuner-collapse-placeholder:nth-child(3) {
 	width: 100%;
-}
-
-.github-inbox-tuner-collapse-representative--expanded
-	.github-inbox-tuner-collapse-placeholders,
-.github-inbox-tuner-collapse-toggle--expanded
-	.github-inbox-tuner-collapse-placeholders {
-	display: none;
 }
 
 #github-inbox-tuner-views {
@@ -808,10 +829,12 @@
 	align-items: center;
 	display: inline-flex !important;
 	flex: 0 0 20px;
+	height: 16px;
 	justify-content: center;
 	margin-left: 6px;
 	margin-right: 5px;
 	min-width: 20px;
+	line-height: 16px;
 	vertical-align: baseline;
 	width: 20px;
 }
@@ -841,9 +864,10 @@
 .github-inbox-tuner-status--check {
 	align-items: center;
 	display: inline-flex;
-	font-size: 12px;
+	font-size: 16px;
 	font-weight: 700;
 	justify-content: center;
+	height: 16px;
 	line-height: 1;
 	min-width: 16px;
 	width: 16px;

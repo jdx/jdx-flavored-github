@@ -1,5 +1,9 @@
 import type {ExtensionOptions, Surface} from '../shared/types.js';
-import {findStackComponents, isDependencyUpdateAuthor} from './grouping.js';
+import {
+	findStackComponents,
+	isDependencyUpdateAuthor,
+	orderStackItems,
+} from './grouping.js';
 import type {
 	PullRequestMetadata,
 	PullRequestReference,
@@ -63,6 +67,11 @@ export function createQueryListCollapsing({
 		)) {
 			toggle.remove();
 		}
+		for (const chevron of document.querySelectorAll(
+			'.github-inbox-tuner-list-collapse-chevron',
+		)) {
+			chevron.remove();
+		}
 		for (const row of document.querySelectorAll(
 			'.github-inbox-tuner-query-member--collapsed',
 		)) {
@@ -80,6 +89,23 @@ export function createQueryListCollapsing({
 		}
 	}
 
+	function placeGroupRowsInOrder(group: QueryItem[]) {
+		const rows = group.map(item => item.row);
+		const parent = rows[0]?.parentElement;
+		if (!parent || !rows.every(row => row.parentElement === parent)) {
+			return;
+		}
+		const children = [...parent.children];
+		const firstIndex = Math.min(...rows.map(row => children.indexOf(row)));
+		if (
+			firstIndex < 0
+			|| rows.every((row, index) => children[firstIndex + index] === row)
+		) {
+			return;
+		}
+		children[firstIndex].before(...rows);
+	}
+
 	function decorateQueryCollapsedGroup(
 		group: QueryItem[],
 		surface: Surface,
@@ -91,8 +117,12 @@ export function createQueryListCollapsing({
 		const button = document.createElement('button');
 		button.className = 'github-inbox-tuner-collapse-toggle github-inbox-tuner-list-collapse-toggle';
 		button.type = 'button';
+		const chevron = document.createElement('button');
+		chevron.className = 'github-inbox-tuner-collapse-chevron github-inbox-tuner-list-collapse-chevron';
+		chevron.type = 'button';
 		const icon = document.createElement('span');
 		icon.className = 'github-inbox-tuner-collapse-icon';
+		chevron.append(icon);
 		const placeholders = document.createElement('span');
 		placeholders.className = 'github-inbox-tuner-collapse-placeholders';
 		placeholders.setAttribute('aria-hidden', 'true');
@@ -101,7 +131,7 @@ export function createQueryListCollapsing({
 			placeholder.className = 'github-inbox-tuner-collapse-placeholder';
 			placeholders.append(placeholder);
 		}
-		button.append(icon, placeholders);
+		button.append(placeholders);
 
 		const updateExpandedState = (expanded: boolean) => {
 			representative.row.classList.toggle(
@@ -109,6 +139,7 @@ export function createQueryListCollapsing({
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
+			chevron.setAttribute('aria-expanded', String(expanded));
 			button.setAttribute(
 				'aria-label',
 				expanded
@@ -122,6 +153,8 @@ export function createQueryListCollapsing({
 			button.title = expanded
 				? expandedLabel
 				: `Expand ${group.length} related ${surface === 'pulls' ? 'pull requests' : 'issues'}`;
+			chevron.setAttribute('aria-label', expanded ? expandedLabel : collapsedLabel);
+			chevron.title = expanded ? expandedLabel : collapsedLabel;
 			for (const {row} of group) {
 				row.classList.toggle(
 					'github-inbox-tuner-query-member--collapsed',
@@ -133,7 +166,7 @@ export function createQueryListCollapsing({
 				);
 			}
 		};
-		button.addEventListener('click', event => {
+		const toggleExpanded = (event: Event) => {
 			event.preventDefault();
 			event.stopPropagation();
 			const expanded = !expandedGroups.has(signature);
@@ -143,8 +176,16 @@ export function createQueryListCollapsing({
 				expandedGroups.delete(signature);
 			}
 			updateExpandedState(expanded);
-		});
+		};
+		button.addEventListener('click', toggleExpanded);
+		chevron.addEventListener('click', toggleExpanded);
 		updateExpandedState(expandedGroups.has(signature));
+		const title = representative.row.querySelector(
+			'.markdown-title, [data-testid="issue-row-title-link"]',
+		) ?? [...representative.row.querySelectorAll<HTMLAnchorElement>('a[href]')].find(link => (
+			/^\/[^/]+\/[^/]+\/(?:pull|issues)\/\d+/.test(link.pathname)
+		));
+		title?.before(chevron);
 		representative.row.after(button);
 	}
 
@@ -154,14 +195,13 @@ export function createQueryListCollapsing({
 			const stackItems = items.filter(
 				(item): item is QueryItem & {metadata: PullRequestMetadata} => Boolean(item.metadata),
 			);
-			for (const stack of findStackComponents(stackItems)) {
+			for (const component of findStackComponents(stackItems)) {
+				const stack = orderStackItems(component);
 				for (const item of stack) {
 					groupedRows.add(item.row);
 				}
-				const baseKeys = new Set(stack.map(item => item.metadata.baseKey));
-				const representative = stack.find(
-					item => !baseKeys.has(item.metadata.headKey),
-				) ?? stack[0];
+				placeGroupRowsInOrder(stack);
+				const representative = stack[0];
 				const signature = `${location.pathname}:pulls:stack:${stack[0].repository}:${stack
 					.map(item => item.number)
 					.sort((left, right) => left - right)

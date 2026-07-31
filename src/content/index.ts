@@ -13,7 +13,11 @@ import {
 	isNotificationsPage,
 	showsArchivedNotifications,
 } from './page.js';
-import {findStackComponents, isDependencyUpdateAuthor} from './grouping.js';
+import {
+	findStackComponents,
+	isDependencyUpdateAuthor,
+	orderStackItems,
+} from './grouping.js';
 import {
 	getNotificationFacts,
 	getNotificationRepository,
@@ -971,14 +975,34 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		return [...groups.values()].filter(group => group.length > 1);
 	}
 
+	function placeGroupRowsInOrder(group) {
+		const rows = group.map(item => item.row);
+		const parent = rows[0]?.parentElement;
+		if (!parent || !rows.every(row => row.parentElement === parent)) {
+			return;
+		}
+		const children = [...parent.children];
+		const firstIndex = Math.min(...rows.map(row => children.indexOf(row)));
+		if (
+			firstIndex < 0
+			|| rows.every((row, index) => children[firstIndex + index] === row)
+		) {
+			return;
+		}
+		children[firstIndex].before(...rows);
+	}
+
 	function decorateCollapsedGroup(group, signature, label, expandedLabel) {
-		const baseKeys = new Set(group.map(item => item.metadata.baseKey));
-		const representative = group.find(item => !baseKeys.has(item.metadata.headKey)) ?? group[0];
+		const representative = group[0];
 		const button = document.createElement('button');
 		button.className = 'github-inbox-tuner-collapse-toggle';
 		button.type = 'button';
+		const chevron = document.createElement('button');
+		chevron.className = 'github-inbox-tuner-collapse-chevron';
+		chevron.type = 'button';
 		const icon = document.createElement('span');
 		icon.className = 'github-inbox-tuner-collapse-icon';
+		chevron.append(icon);
 		const placeholders = document.createElement('span');
 		placeholders.className = 'github-inbox-tuner-collapse-placeholders';
 		placeholders.setAttribute('aria-hidden', 'true');
@@ -987,7 +1011,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			placeholder.className = 'github-inbox-tuner-collapse-placeholder';
 			placeholders.append(placeholder);
 		}
-		button.append(icon, placeholders);
+		button.append(placeholders);
 
 		const updateExpandedState = expanded => {
 			representative.row.classList.toggle(
@@ -995,6 +1019,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
+			chevron.setAttribute('aria-expanded', String(expanded));
 			button.setAttribute(
 				'aria-label',
 				expanded ? expandedLabel : `Expand ${group.length} related pull requests; ${label}`,
@@ -1006,6 +1031,8 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			button.title = expanded
 				? expandedLabel
 				: `Expand ${group.length} related pull request notifications`;
+			chevron.setAttribute('aria-label', expanded ? expandedLabel : label);
+			chevron.title = expanded ? expandedLabel : label;
 			for (const {row} of group) {
 				row.classList.toggle(
 					'github-inbox-tuner-stack-member--collapsed',
@@ -1017,7 +1044,9 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				);
 			}
 		};
-		button.addEventListener('click', () => {
+		const toggleExpanded = event => {
+			event.preventDefault();
+			event.stopPropagation();
 			const expanded = !expandedNotificationStacks.has(signature);
 			if (expanded) {
 				expandedNotificationStacks.add(signature);
@@ -1025,14 +1054,20 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				expandedNotificationStacks.delete(signature);
 			}
 			updateExpandedState(expanded);
-		});
+		};
+		button.addEventListener('click', toggleExpanded);
+		chevron.addEventListener('click', toggleExpanded);
 		updateExpandedState(expandedNotificationStacks.has(signature));
+		representative.row.querySelector('.notification-list-item-link')?.before(chevron);
 		representative.row.after(button);
 	}
 
 	function clearNotificationStackDecorations(root) {
 		for (const toggle of root.querySelectorAll('.github-inbox-tuner-collapse-toggle')) {
 			toggle.remove();
+		}
+		for (const chevron of root.querySelectorAll('.github-inbox-tuner-collapse-chevron')) {
+			chevron.remove();
 		}
 		for (const row of root.querySelectorAll('.github-inbox-tuner-stack-member--collapsed')) {
 			row.classList.remove('github-inbox-tuner-stack-member--collapsed');
@@ -1053,10 +1088,12 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		row: Element;
 	}>) {
 		const groupedItems = new Set();
-		for (const stack of findStackComponents(items)) {
+		for (const component of findStackComponents(items)) {
+			const stack = orderStackItems(component);
 			for (const item of stack) {
 				groupedItems.add(item);
 			}
+			placeGroupRowsInOrder(stack);
 			const signature = `${stack[0].reference.repository}:${stack
 				.map(item => item.reference.number)
 				.sort((left, right) => left - right)
@@ -2742,6 +2779,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			[...mutation.addedNodes, ...mutation.removedNodes].every(node => (
 				!(node instanceof Element)
 					|| node.classList.contains('github-inbox-tuner-collapse-toggle')
+					|| node.classList.contains('github-inbox-tuner-collapse-chevron')
 					|| node.classList.contains('github-inbox-tuner-view-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-repository-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-bulk-dialog')
