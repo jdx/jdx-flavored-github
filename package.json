@@ -1,6 +1,7 @@
 {
 	"name": "jdx-flavored-github",
 	"private": true,
+	"license": "MIT",
 	"packageManager": "aube@1.36.0",
 	"scripts": {
 		"build": "tsc --noEmit && node scripts/build.mjs",
