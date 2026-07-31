@@ -3,6 +3,12 @@ name: CI
 on:
   workflow_dispatch:
   pull_request:
+    types:
+      - edited
+      - opened
+      - ready_for_review
+      - reopened
+      - synchronize
   push:
     branches:
       - main
@@ -36,13 +42,13 @@ jobs:
 
   pull-request-title:
     name: Pull request title
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       pull-requests: read
     steps:
       - name: Check Conventional Commit title
+        if: github.event_name == 'pull_request'
         uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,6 +66,9 @@ jobs:
             ci
             revert
             security
+      - name: Skip title check outside pull requests
+        if: github.event_name != 'pull_request'
+        run: echo "Pull request title check does not apply to this event."
 
   final:
     name: Final
@@ -80,18 +89,12 @@ jobs:
           import os
           import sys
 
-          # The title check only applies to pull requests, so a skip on push or
-          # manual runs is expected. Every other upstream job must succeed.
-          skip_ok = {"pull-request-title"}
-
           needs = json.loads(os.environ["NEEDS_JSON"])
           failed = False
           for name, data in sorted(needs.items()):
               result = data.get("result", "unknown")
               if result == "success":
                   print(f"::notice::{name}: {result}")
-              elif result == "skipped" and name in skip_ok:
-                  print(f"::notice::{name}: {result} (allowed to skip)")
               else:
                   print(f"::error::{name}: {result}")
                   failed = True
