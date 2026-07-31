@@ -1,21 +1,14 @@
-(() => {
-	'use strict';
+import * as dsl from '../dsl/index.js';
+import {defaultOptions} from '../shared/types.js';
+import type {NotificationRule, Surface} from '../shared/types.js';
 
-	const dsl = globalThis.GitHubInboxTunerDsl;
-	const defaults = {
-		collapseDependencyUpdates: true,
-		collapseSameAuthorNotifications: false,
-		dimBotNotifications: true,
-		showHeaderSettingsButton: true,
-		ownerViewOverrides: {},
-		repositoryViewOverrides: {},
-		viewOverrides: {},
-	};
-	const surfaces = ['notifications', 'pulls', 'issues'];
-	const status = document.querySelector('#status');
-	const scopeInput = document.querySelector('#view-scope');
-	const scopeHelp = document.querySelector('#scope-help');
-	const removeScopeButton = document.querySelector('#remove-scope');
+(() => {
+	const defaults = defaultOptions;
+	const surfaces: Surface[] = ['notifications', 'pulls', 'issues'];
+	const status = document.querySelector<HTMLOutputElement>('#status')!;
+	const scopeInput = document.querySelector<HTMLSelectElement>('#view-scope')!;
+	const scopeHelp = document.querySelector<HTMLElement>('#scope-help')!;
+	const removeScopeButton = document.querySelector<HTMLButtonElement>('#remove-scope')!;
 	const checkboxIds = {
 		collapseDependencyUpdates: 'collapse-dependency-updates',
 		collapseSameAuthorNotifications: 'collapse-same-author-notifications',
@@ -134,8 +127,8 @@
 		}
 	}
 
-	function newItem(surface) {
-		const item = {
+	function newItem(surface): NotificationRule {
+		const item: NotificationRule = {
 			id: `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
 			label: surface === 'notifications' ? 'New rule' : 'New view',
 			dsl: surface === 'notifications'
@@ -326,7 +319,7 @@
 	}
 
 	function renderSurface(surface) {
-		const editor = document.querySelector(`.view-editor[data-surface="${surface}"]`);
+		const editor = document.querySelector<HTMLElement>(`.view-editor[data-surface="${surface}"]`)!;
 		const scopeKind = getScopeKind();
 		const scoped = scopeKind !== 'global';
 		const inherited = scopeKind === 'owner'
@@ -343,7 +336,7 @@
 		editor.querySelector('.restore-views').textContent = scoped
 			? parentLabel
 			: 'Restore default filters';
-		editor.querySelector('.restore-views').disabled = inherited;
+		editor.querySelector<HTMLButtonElement>('.restore-views')!.disabled = inherited;
 		editor.querySelector('.add-view').textContent = surface === 'notifications'
 			? 'Add rule'
 			: 'Add view';
@@ -402,11 +395,11 @@
 
 			const controls = document.createElement('div');
 			controls.className = 'view-controls';
-			for (const [label, title, handler, disabled] of [
+			for (const [label, title, handler, disabled] of ([
 				['↑', 'Move up', () => moveItem(surface, item.id, -1), index === 0],
 				['↓', 'Move down', () => moveItem(surface, item.id, 1), index === items.length - 1],
 				['×', 'Delete', () => removeItem(surface, item.id), items.length === 1],
-			]) {
+			] as Array<[string, string, () => void, boolean]>)) {
 				const button = document.createElement('button');
 				button.type = 'button';
 				button.textContent = label;
@@ -686,13 +679,14 @@
 		}
 		const validateOverrides = (overrides, scopeLabel) => {
 			for (const [surface, value] of Object.entries(overrides)) {
-				if (!surfaces.includes(surface)) {
+				if (!surfaces.includes(surface as Surface)) {
 					throw new Error(`Unknown ${scopeLabel} surface “${surface}”`);
 				}
-				if (!isSurfaceValue(surface, value)) {
+				const typedSurface = surface as Surface;
+				if (!isSurfaceValue(typedSurface, value)) {
 					throw new Error(`${scopeLabel} ${surface} has an invalid structure`);
 				}
-				validateSurface(surface, value, scopeLabel);
+				validateSurface(typedSurface, value, scopeLabel);
 			}
 		};
 		validateOverrides(normalized.viewOverrides, 'global');
@@ -757,13 +751,16 @@
 			}
 		}
 		for (const [key, id] of Object.entries(checkboxIds)) {
-			updatedOptions[key] = document.querySelector(`#${id}`).checked;
+			updatedOptions[key] = document.querySelector<HTMLInputElement>(`#${id}`)!.checked;
 		}
 		return updatedOptions;
 	}
 
 	async function restore() {
-		const stored = {...defaults, ...await chrome.storage.sync.get(defaults)};
+		const stored = {
+			...defaults,
+			...await chrome.storage.sync.get(Object.keys(defaults)),
+		};
 		builtInNotificationRules = dsl.cloneBuiltInNotificationRules();
 		builtInViews = dsl.cloneBuiltInViews();
 		const url = new URL(location.href);
@@ -786,7 +783,7 @@
 			selectedBySurface[surface] = state.global[surface].defaultViewId;
 		}
 		for (const [key, id] of Object.entries(checkboxIds)) {
-			document.querySelector(`#${id}`).checked = state[key];
+			document.querySelector<HTMLInputElement>(`#${id}`)!.checked = state[key];
 		}
 		renderEditors();
 	}
@@ -853,7 +850,7 @@
 		status.textContent = 'All settings and filters restored';
 	}
 
-	for (const editor of document.querySelectorAll('.view-editor')) {
+	for (const editor of document.querySelectorAll<HTMLElement>('.view-editor')) {
 		editor.querySelector('.add-view').addEventListener('click', () => {
 			const surface = editor.dataset.surface;
 			const value = ensureEditableSurface(surface);
@@ -874,8 +871,8 @@
 		}
 		renderEditors();
 	});
-	document.querySelector('#add-repository').addEventListener('click', () => {
-		const input = document.querySelector('#new-repository');
+	document.querySelector('#add-repository')!.addEventListener('click', () => {
+		const input = document.querySelector<HTMLInputElement>('#new-repository')!;
 		const repository = input.value.trim();
 		if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) {
 			status.textContent = 'Use the format owner/repository';
@@ -886,8 +883,8 @@
 		input.value = '';
 		renderEditors();
 	});
-	document.querySelector('#add-owner').addEventListener('click', () => {
-		const input = document.querySelector('#new-owner');
+	document.querySelector('#add-owner')!.addEventListener('click', () => {
+		const input = document.querySelector<HTMLInputElement>('#new-owner')!;
 		const owner = input.value.trim();
 		if (!/^[\w.-]+$/.test(owner)) {
 			status.textContent = 'Use a GitHub user or organization name';
@@ -910,11 +907,11 @@
 		status.textContent = `${label} overrides removed; save to apply`;
 		renderEditors();
 	});
-	document.querySelector('#save').addEventListener('click', save);
-	document.querySelector('#reset').addEventListener('click', reset);
-	document.querySelector('#export-settings').addEventListener('click', exportSettings);
-	const importFileInput = document.querySelector('#import-settings-file');
-	document.querySelector('#import-settings').addEventListener('click', () => {
+	document.querySelector('#save')!.addEventListener('click', save);
+	document.querySelector('#reset')!.addEventListener('click', reset);
+	document.querySelector('#export-settings')!.addEventListener('click', exportSettings);
+	const importFileInput = document.querySelector<HTMLInputElement>('#import-settings-file')!;
+	document.querySelector('#import-settings')!.addEventListener('click', () => {
 		importFileInput.click();
 	});
 	importFileInput.addEventListener('change', () => {

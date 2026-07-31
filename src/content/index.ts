@@ -1,22 +1,42 @@
-(() => {
-	'use strict';
+import * as dsl from '../dsl/index.js';
+import {defaultOptions} from '../shared/types.js';
+import type {
+	ExtensionOptions,
+	NotificationRule,
+	Surface,
+	ViewDefinition,
+} from '../shared/types.js';
+import {
+	getCurrentRepository,
+	getOwner,
+	getSurface,
+	isNotificationsPage,
+	showsArchivedNotifications,
+} from './page.js';
+import {findStackComponents, isDependencyUpdateAuthor} from './grouping.js';
+import {
+	getNotificationFacts,
+	getNotificationRepository,
+	getPullRequestReference,
+	hasOnlyVisibleBotParticipants,
+	isTerminalPullRequestRow,
+} from './notification-dom.js';
+import {
+	parseCommitStatusPartial,
+	parseMergeConflict,
+	parsePullRequestMetadata,
+} from './pull-request-metadata.js';
+import {createQueryListCollapsing} from './query-collapsing.js';
+import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 
-	const dsl = globalThis.GitHubInboxTunerDsl;
+(() => {
 	let builtInNotificationRules;
 	let builtInViews;
-	const defaults = {
-		collapseDependencyUpdates: true,
-		collapseSameAuthorNotifications: false,
-		dimBotNotifications: true,
-		showHeaderSettingsButton: true,
-		ownerViewOverrides: {},
-		repositoryViewOverrides: {},
-		viewOverrides: {},
-	};
+	const defaults = defaultOptions;
 	builtInNotificationRules = dsl.cloneBuiltInNotificationRules();
 	builtInViews = dsl.cloneBuiltInViews();
 
-	let options = defaults;
+	let options: ExtensionOptions = defaults;
 	let activeNotificationView;
 	let notificationViewExplicitlySelected = false;
 	let revealedFilterReasonsByList = new WeakMap();
@@ -29,7 +49,6 @@
 	let notificationStackRefresh;
 	let notificationStackGeneration = 0;
 	let notificationViewRefresh;
-	let queryListCollapseRefresh;
 	let recentNotificationsAlertRefresh;
 	let recentNotificationsAlertRefreshInFlight;
 	let viewBarResizeObserver;
@@ -39,17 +58,18 @@
 	const pullRequestMetadataCache = new Map();
 	const queryCountCache = new Map();
 	const notificationDslCache = new Map();
-	const expandedNotificationStacks = new Set();
+	const expandedNotificationStacks = new Set<string>();
+	const {scheduleQueryListCollapseRefresh} = createQueryListCollapsing({
+		expandedGroups: expandedNotificationStacks,
+		getOptions: () => options,
+		getTargets: surface => getListBulkTargets(surface),
+	});
 	const pullRequestChecksStorageKey = 'pullRequestChecksCache';
 	const pullRequestLabelsStorageKey = 'pullRequestLabelsCache';
 	const checksFreshFor = 5 * 60 * 1000;
 	const checksUsableFor = 60 * 60 * 1000;
 
-	function getOwner(repository) {
-		return repository?.split('/')[0];
-	}
-
-	function getSurfaceOverride(surface, repository) {
+	function getSurfaceOverride(surface: Surface, repository?: string) {
 		return (
 			repository
 				? options.repositoryViewOverrides?.[repository]?.[surface]
@@ -61,7 +81,7 @@
 		) ?? options.viewOverrides?.[surface];
 	}
 
-	function getViews(surface, repository) {
+	function getViews(surface: Surface, repository?: string) {
 		if (surface === 'notifications') {
 			return getNotificationRules(repository).filter(rule => rule.showAsView);
 		}
@@ -74,96 +94,19 @@
 			: builtInViews[surface];
 	}
 
-	function getNotificationRules(repository) {
+	function getNotificationRules(repository?: string) {
 		const override = getSurfaceOverride('notifications', repository);
 		return Array.isArray(override?.rules) && override.rules.length > 0
 			? override.rules
 			: builtInNotificationRules;
 	}
 
-	function getCurrentRepository() {
-		const match = location.pathname.match(/^\/([^/]+)\/([^/]+)\/(?:pulls|issues)\/?$/);
-		return match ? `${match[1]}/${match[2]}` : undefined;
-	}
-
-	function isNotificationsPage() {
-		return location.pathname === '/notifications';
-	}
-
-	function showsArchivedNotifications() {
-		const url = new URL(location.href);
-		const query = url.searchParams.get('query')
-			?? url.searchParams.get('q')
-			?? '';
-		return /(?:^|\s)is:(?:done|saved)(?:\s|$)/i.test(query);
-	}
-
-	function isPullRequestList() {
-		return location.pathname === '/pulls'
-			|| /^\/[^/]+\/[^/]+\/pulls\/?$/.test(location.pathname);
-	}
-
-	function isIssueList() {
-		return location.pathname === '/issues'
-			|| /^\/[^/]+\/[^/]+\/issues\/?$/.test(location.pathname);
-	}
-
-	function getSurface() {
-		if (isNotificationsPage()) {
-			return 'notifications';
-		}
-
-		if (isPullRequestList()) {
-			return 'pulls';
-		}
-
-		if (isIssueList()) {
-			return 'issues';
-		}
-	}
-
-	function getDefaultViewId(surface, repository) {
+	function getDefaultViewId(surface: Surface, repository?: string) {
 		const targetRepository = repository
 			?? (surface === 'notifications' ? undefined : getCurrentRepository());
 		const override = getSurfaceOverride(surface, targetRepository);
 		const defaultViewId = override?.defaultViewId;
 		return defaultViewId ?? dsl.builtInDefaultViewIds[surface];
-	}
-
-	function getNotificationRepository(element) {
-		const itemLink = element?.classList?.contains('notifications-list-item')
-			? element.querySelector('.notification-list-item-link[href]')
-			: element?.closest?.('.notifications-list-item')
-				?.querySelector('.notification-list-item-link[href]');
-		if (itemLink) {
-			const match = new URL(itemLink.getAttribute('href'), location.origin)
-				.pathname.match(/^\/([^/]+)\/([^/]+)(?:\/|$)/);
-			if (match) {
-				return `${match[1]}/${match[2]}`;
-			}
-		}
-
-		const list = element?.classList?.contains('js-notifications-list')
-			? element
-			: element?.closest?.('.js-notifications-list')
-				?? element?.parentElement;
-		const group = list?.closest(
-			'.js-navigation-container, section, [data-repository-hovercards-enabled]',
-		) ?? list?.parentElement;
-		for (const link of group?.querySelectorAll('a[href]') ?? []) {
-			const match = new URL(link.getAttribute('href'), location.origin)
-				.pathname.match(/^\/([^/]+)\/([^/]+)(?:\/|$)/);
-			if (
-				match
-				&& !['apps', 'notifications', 'settings', 'orgs', 'users'].includes(match[1])
-			) {
-				return `${match[1]}/${match[2]}`;
-			}
-		}
-
-		const heading = group?.querySelector('h1, h2, h3, [data-repository-name]');
-		const match = heading?.textContent.trim().match(/([\w.-]+)\/([\w.-]+)/);
-		return match ? `${match[1]}/${match[2]}` : undefined;
 	}
 
 	function getActiveNotificationViewId(row) {
@@ -179,97 +122,6 @@
 			return getDefaultViewId('notifications', repository);
 		}
 		return activeNotificationView;
-	}
-
-	function getNotificationMetadata(row) {
-		const link = row.querySelector('.notification-list-item-link[data-hydro-click]');
-		if (!link) {
-			return {};
-		}
-
-		try {
-			const event = JSON.parse(link.dataset.hydroClick);
-			return {
-				reason: event.payload?.metadata?.reason,
-				threadType: event.payload?.thread_type,
-			};
-		} catch {
-			return {};
-		}
-	}
-
-	function hasOnlyVisibleBotParticipants(row) {
-		const participants = [...row.querySelectorAll('.AvatarStack a[href]')];
-		return participants.length > 0
-			&& participants.every(link => link.getAttribute('href').startsWith('/apps/'));
-	}
-
-	function isTerminalPullRequestRow(row) {
-		return Boolean(row.querySelector(
-			':is(.octicon-git-pull-request-closed, .octicon-git-merge)',
-		));
-	}
-
-	function getNotificationFacts(row) {
-		const {reason, threadType} = getNotificationMetadata(row);
-		const titleElement = row.querySelector('.markdown-title');
-		const itemLink = row.querySelector('.notification-list-item-link[href]');
-		const pathname = itemLink
-			? new URL(itemLink.getAttribute('href'), location.origin).pathname
-			: '';
-		const repository = getNotificationRepository(row);
-		let notificationType = threadType
-			?.replace(/([a-z])([A-Z])/g, '$1-$2')
-			.replaceAll('_', '-')
-			.toLowerCase();
-		if (/\/pull\/\d+/.test(pathname)) {
-			notificationType = 'pr';
-		} else if (/\/issues\/\d+/.test(pathname)) {
-			notificationType = 'issue';
-		} else if (/\/discussions\/\d+/.test(pathname)) {
-			notificationType = 'discussion';
-		} else if (/\/releases\//.test(pathname)) {
-			notificationType = 'release';
-		} else if (/\/commit\//.test(pathname)) {
-			notificationType = 'commit';
-		} else if (itemLink?.hostname === 'gist.github.com') {
-			notificationType = 'gist';
-		}
-		const terminalPullRequest = isTerminalPullRequestRow(row);
-		const facts = {
-			author: row.dataset.githubInboxTunerAuthor,
-			bot: hasOnlyVisibleBotParticipants(row),
-			directMention: reason === 'mention',
-			done: row.classList.contains('notification-archived'),
-			draft: Boolean(row.querySelector('.octicon-git-pull-request-draft')),
-			failingChecks: !terminalPullRequest
-				&& row.dataset.githubInboxTunerFailingChecks === 'true',
-			checkStatus: terminalPullRequest
-				? ''
-				: row.dataset.githubInboxTunerCheckStatus,
-			issue: Boolean(row.querySelector(':is(.octicon-issue-opened, .octicon-issue-closed, .octicon-skip)')),
-			labels: JSON.parse(row.dataset.githubInboxTunerLabels ?? '[]'),
-			mergeConflict: !terminalPullRequest
-				&& row.dataset.githubInboxTunerMergeConflict === 'true',
-			mergedPullRequest: Boolean(row.querySelector('.octicon-git-merge')),
-			ownPullRequest: row.dataset.githubInboxTunerOwnPullRequest === 'true',
-			pullRequest: Boolean(
-				row.querySelector('[class*="octicon-git-pull-request"], .octicon-git-merge')
-				|| row.querySelector('a[href*="/pull/"]'),
-			),
-			notificationType,
-			organization: repository?.split('/')[0],
-			read: !row.classList.contains('notification-unread'),
-			reason,
-			repository,
-			saved: Boolean(row.querySelector('.notification-is-starred-icon.color-fg-severe')),
-			title: titleElement?.dataset.githubInboxTunerOriginalTitle
-				?? titleElement?.textContent.trim()
-				?? '',
-			closedPullRequest: Boolean(row.querySelector('.octicon-git-pull-request-closed')),
-			closedIssue: Boolean(row.querySelector(':is(.octicon-issue-closed, .octicon-skip)')),
-		};
-		return facts;
 	}
 
 	function matchesNotificationView(row, viewId) {
@@ -345,136 +197,6 @@
 			: [`Outside ${view?.label ?? 'this view'}`];
 	}
 
-	function updateStatusBadges(row, facts) {
-		const title = row.querySelector('.markdown-title');
-		if (!title) {
-			return;
-		}
-
-		title.dataset.githubInboxTunerOriginalTitle ??= title.textContent.trim();
-		updateMergeConflictIcon(row, facts);
-		let checkBadge;
-		if (facts.checkStatus === 'failure') {
-			checkBadge = {
-				icon: '×',
-				label: facts.ownPullRequest ? 'Checks failing (yours)' : 'Checks failing',
-				state: 'failure',
-			};
-		} else if (facts.checkStatus === 'pending') {
-			checkBadge = {icon: '●', label: 'Checks pending', state: 'pending'};
-		} else if (facts.checkStatus === 'success') {
-			checkBadge = {icon: '✓', label: 'Checks passing', state: 'success'};
-		}
-
-		let checkContainer = row.querySelector('.github-inbox-tuner-check-status');
-		if (!checkBadge) {
-			checkContainer?.remove();
-		} else {
-			const identifier = title.parentElement
-				?.querySelector(':scope > .d-flex > p.m-0.f6.flex-auto > span');
-			if (identifier) {
-				checkContainer ??= document.createElement('span');
-				checkContainer.className = 'github-inbox-tuner-check-status';
-				if (checkContainer.parentElement !== identifier) {
-					identifier.append(checkContainer);
-				}
-				if (checkContainer.dataset.signature !== checkBadge.label) {
-					checkContainer.dataset.signature = checkBadge.label;
-					checkContainer.replaceChildren(createStatusBadge(checkBadge));
-				}
-			}
-		}
-
-		const badges = [];
-		if (facts.directMention) {
-			badges.push({label: 'Direct mention', priority: true});
-		}
-
-		let container = row.querySelector('.github-inbox-tuner-statuses');
-		const signature = badges.map(badge => badge.label).join('|');
-		if (!signature) {
-			container?.remove();
-			return;
-		}
-
-		if (!container) {
-			container = document.createElement('span');
-			container.className = 'github-inbox-tuner-statuses';
-			title.after(container);
-		}
-
-		if (container.dataset.signature === signature) {
-			return;
-		}
-
-		container.dataset.signature = signature;
-		container.replaceChildren(...badges.map(createStatusBadge));
-	}
-
-	function updateMergeConflictIcon(row, facts) {
-		const original = row.querySelector(
-			':is(.octicon-git-pull-request, .octicon-git-pull-request-draft, .octicon-git-pull-request-closed, .octicon-git-merge)',
-		);
-		let conflictIcon = row.querySelector('.github-inbox-tuner-conflict-icon');
-		if (!facts.mergeConflict || !original) {
-			conflictIcon?.remove();
-			original?.classList.remove('github-inbox-tuner-original-pr-icon--hidden');
-			return;
-		}
-
-		original.classList.add('github-inbox-tuner-original-pr-icon--hidden');
-		if (conflictIcon) {
-			return;
-		}
-		conflictIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-		conflictIcon.setAttribute('aria-label', 'Pull request has merge conflicts');
-		conflictIcon.setAttribute('height', '16');
-		conflictIcon.setAttribute('role', 'img');
-		conflictIcon.setAttribute('viewBox', '0 0 16 16');
-		conflictIcon.setAttribute('width', '16');
-		conflictIcon.classList.add(
-			'octicon',
-			'octicon-alert-fill',
-			'github-inbox-tuner-conflict-icon',
-		);
-		const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		path.setAttribute(
-			'd',
-			'M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575ZM8 5a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 8 5Zm0 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z',
-		);
-		conflictIcon.append(path);
-		original.before(conflictIcon);
-	}
-
-	function createStatusBadge({icon, label, priority, state}) {
-		const badge = document.createElement('span');
-		badge.className = 'github-inbox-tuner-status';
-		badge.classList.toggle('github-inbox-tuner-status--priority', priority);
-		if (state) {
-			badge.classList.add('github-inbox-tuner-status--check');
-			badge.classList.add(`github-inbox-tuner-status--${state}`);
-		}
-		badge.textContent = icon ?? label;
-		if (icon) {
-			badge.setAttribute('aria-label', label);
-			badge.title = label;
-		}
-		return badge;
-	}
-
-	function updateRevealedIndicator(row, reasons) {
-		const revealed = reasons.length > 0;
-		row.classList.toggle('github-inbox-tuner-revealed', revealed);
-		if (revealed) {
-			row.setAttribute(
-				'aria-description',
-				`Temporarily revealed; filtered by ${reasons.join(', ')}`,
-			);
-		} else {
-			row.removeAttribute('aria-description');
-		}
-	}
-
 	function classifyNotification(row) {
 		const facts = getNotificationFacts(row);
 		const viewId = getActiveNotificationViewId(row);
@@ -506,7 +228,7 @@
 		if (!getViews('notifications').some(view => view.id === activeNotificationView)) {
 			activeNotificationView = getViews('notifications')[0].id;
 		}
-		const rows = document.querySelectorAll('.notifications-list-item');
+		const rows = document.querySelectorAll<HTMLElement>('.notifications-list-item');
 		for (const row of rows) {
 			applyCachedPullRequestFacts(row);
 			applyCachedPullRequestLabelFacts(row);
@@ -530,23 +252,6 @@
 				updateNotificationVisibility();
 			}
 		}, delay);
-	}
-
-	function getPullRequestReference(row) {
-		const href = row.querySelector('.notification-list-item-link[href*="/pull/"]')?.href;
-		if (!href) {
-			return;
-		}
-
-		const match = new URL(href).pathname.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
-		if (!match) {
-			return;
-		}
-
-		return {
-			number: Number(match[3]),
-			repository: `${match[1]}/${match[2]}`,
-		};
 	}
 
 	async function fetchPullRequestNumbers(repository, query) {
@@ -619,7 +324,7 @@
 		setPullRequestLabelFacts(row, reference, labelNumbers);
 	}
 
-	async function enrichPullRequestLabelFacts(rows, rules) {
+	async function enrichPullRequestLabelFacts(rows, rules?) {
 		const explicitLabels = rules
 			? getConfiguredNotificationLabels(rules)
 			: undefined;
@@ -639,7 +344,7 @@
 			const labelNumbers = new Map(await Promise.all(labels.map(async label => [
 				label,
 				await getPullRequestLabelNumbers(repository, label),
-			])));
+			] as const)));
 			for (const {reference, row} of items) {
 				setPullRequestLabelFacts(row, reference, labelNumbers);
 			}
@@ -806,7 +511,7 @@
 			return;
 		}
 
-		const rows = document.querySelectorAll('.notifications-list-item');
+		const rows = document.querySelectorAll<HTMLElement>('.notifications-list-item');
 		await Promise.all([
 			enrichPullRequestCheckFacts(rows),
 			enrichPullRequestLabelFacts(rows),
@@ -829,7 +534,7 @@
 	}
 
 	function getGlobalNotificationLink() {
-		return [...document.querySelectorAll('a[href="/notifications"]')].find(link => (
+		return [...document.querySelectorAll<HTMLAnchorElement>('a[href="/notifications"]')].find(link => (
 			link.querySelector('svg.octicon-inbox')
 			&& link.closest('[data-testid="top-nav-right"], header')
 		));
@@ -923,7 +628,7 @@
 		}
 
 		const document_ = new DOMParser().parseFromString(await response.text(), 'text/html');
-		const rows = [...document_.querySelectorAll('.notifications-list-item')];
+		const rows = [...document_.querySelectorAll<HTMLElement>('.notifications-list-item')];
 		for (const row of rows) {
 			applyCachedPullRequestFacts(row);
 			applyCachedPullRequestLabelFacts(row);
@@ -1016,7 +721,7 @@
 
 		recentNotificationsAlertRefreshInFlight = (async () => {
 			const loadedIds = new Set(
-				[...document.querySelectorAll('.notifications-list-item[data-notification-id]')]
+				[...document.querySelectorAll<HTMLElement>('.notifications-list-item[data-notification-id]')]
 					.map(row => row.dataset.notificationId),
 			);
 			let url = new URL('/notifications?query=is%3Aunread', location.origin).href;
@@ -1085,123 +790,6 @@
 			recentNotificationsAlertRefresh = undefined;
 			void refreshRecentNotificationsAlert();
 		}, 150);
-	}
-
-	function parsePullRequestMetadata(html, reference) {
-		const document_ = new DOMParser().parseFromString(html, 'text/html');
-		const checkStatusText = [...document_.querySelectorAll(
-			'button, [aria-label], img[alt]',
-		)]
-			.flatMap(element => [
-				element.textContent.trim(),
-				element.getAttribute('aria-label') ?? '',
-				element.getAttribute('alt') ?? '',
-			])
-			.find(text => /\bchecks (?:failing|pending|passing)\b/i.test(text));
-		const checkStatusLabel = checkStatusText
-			?.match(/\bchecks (failing|pending|passing)\b/i)?.[1]
-			.toLowerCase();
-		const checkStatus = checkStatusLabel === 'failing'
-			? 'failure'
-			: checkStatusLabel === 'pending'
-				? 'pending'
-				: checkStatusLabel === 'passing'
-					? 'success'
-					: undefined;
-		const statusBatchElements = [...document_.querySelectorAll(
-			'batch-deferred-content[data-url*="checks-statuses-rollups"]',
-		)];
-		const getStatusBatch = headSha => {
-			const element = (
-				headSha
-					? statusBatchElements.find(candidate => (
-						candidate.querySelector('input[name="oid"]')?.value === headSha
-					))
-					: undefined
-			) ?? statusBatchElements.at(-1);
-			return element
-				? {
-					fields: [...element.querySelectorAll('input[name]')].map(input => [
-						input.name,
-						input.value,
-					]),
-					url: element.getAttribute('data-url'),
-				}
-				: undefined;
-		};
-		const metadata = {
-			checkStatus,
-			number: reference.number,
-			statusBatch: getStatusBatch(),
-		};
-		for (const script of document_.querySelectorAll(
-			'script[type="application/json"][data-target="react-app.embeddedData"]',
-		)) {
-			try {
-				const data = JSON.parse(script.textContent);
-				const route = data.payload?.pullRequestsLayoutRoute;
-				const pullRequest = route?.pullRequest;
-				const repository = route?.repository;
-				if (!pullRequest?.baseBranch || !pullRequest?.headBranch || !repository) {
-					continue;
-				}
-
-				return {
-					...metadata,
-					author: pullRequest.author?.login ?? '',
-					baseKey: `${repository.ownerLogin}/${repository.name}:${pullRequest.baseBranch}`,
-					headKey: `${pullRequest.headRepositoryOwnerLogin}/${pullRequest.headRepositoryName}:${pullRequest.headBranch}`,
-					number: pullRequest.number ?? reference.number,
-					state: pullRequest.state,
-					statusBatch: getStatusBatch(pullRequest.headSha),
-					title: pullRequest.title ?? '',
-				};
-			} catch {}
-		}
-		return checkStatus || metadata.statusBatch ? metadata : undefined;
-	}
-
-	function parseCommitStatusPartial(html) {
-		const document_ = new DOMParser().parseFromString(html, 'text/html');
-		if (document_.querySelector(
-			'.color-fg-danger, .octicon-x, .octicon-x-circle-fill',
-		)) {
-			return 'failure';
-		}
-		if (document_.querySelector(
-			'.color-fg-attention, .color-fg-severe, .octicon-dot-fill, .octicon-clock',
-		)) {
-			return 'pending';
-		}
-		if (document_.querySelector(
-			'.color-fg-success, .octicon-check, .octicon-check-circle-fill',
-		)) {
-			return 'success';
-		}
-	}
-
-	function parseMergeConflict(payload) {
-		const mergeStateStatus = payload?.pullRequest?.mergeStateStatus;
-		if (mergeStateStatus === 'DIRTY') {
-			return true;
-		}
-		if (
-			['CLEAN', 'UNSTABLE', 'HAS_HOOKS', 'BEHIND', 'BLOCKED'].includes(
-				mergeStateStatus,
-			)
-		) {
-			return false;
-		}
-		const conflictCondition = payload?.mergeRequirements?.conditions?.find(
-			condition => /CONFLICT/i.test(condition.type ?? ''),
-		);
-		if (conflictCondition) {
-			return conflictCondition.result === 'FAILED'
-				&& (
-					!Array.isArray(conflictCondition.conflicts)
-					|| conflictCondition.conflicts.length > 0
-				);
-		}
 	}
 
 	function setExactPullRequestCheckStatus(reference, checkStatus) {
@@ -1296,56 +884,6 @@
 		}
 		pullRequestMetadataCache.set(key, {updatedAt: Date.now(), value});
 		return value;
-	}
-
-	function findStackComponents(items) {
-		const parent = items.map((_, index) => index);
-		const find = index => {
-			while (parent[index] !== index) {
-				parent[index] = parent[parent[index]];
-				index = parent[index];
-			}
-			return index;
-		};
-		const join = (left, right) => {
-			const leftRoot = find(left);
-			const rightRoot = find(right);
-			if (leftRoot !== rightRoot) {
-				parent[rightRoot] = leftRoot;
-			}
-		};
-
-		for (let left = 0; left < items.length; left++) {
-			for (let right = left + 1; right < items.length; right++) {
-				if (
-					(
-						items[left].metadata.baseKey
-						&& items[right].metadata.headKey
-						&& items[left].metadata.baseKey === items[right].metadata.headKey
-					)
-					|| (
-						items[right].metadata.baseKey
-						&& items[left].metadata.headKey
-						&& items[right].metadata.baseKey === items[left].metadata.headKey
-					)
-				) {
-					join(left, right);
-				}
-			}
-		}
-
-		const groups = new Map();
-		for (let index = 0; index < items.length; index++) {
-			const root = find(index);
-			const group = groups.get(root) ?? [];
-			group.push(items[index]);
-			groups.set(root, group);
-		}
-		return [...groups.values()].filter(group => group.length > 1);
-	}
-
-	function isDependencyUpdateAuthor(author) {
-		return /^(?:app\/)?(?:dependabot|renovate)(?:\[bot\]|-bot)?$/i.test(author);
 	}
 
 	function findAuthorComponents(items) {
@@ -1548,126 +1086,6 @@
 		notificationStackRefresh = setTimeout(() => {
 			void updateNotificationStacks();
 		}, 350);
-	}
-
-	function getQueryListItemAuthor(row) {
-		const hovercard = [...row.querySelectorAll('a[data-hovercard-url^="/users/"]')]
-			.map(link => link.getAttribute('data-hovercard-url'))
-			.find(Boolean);
-		const hovercardMatch = hovercard?.match(/^\/users\/([^/]+)\/hovercard/);
-		if (hovercardMatch) {
-			return decodeURIComponent(hovercardMatch[1]);
-		}
-		for (const link of row.querySelectorAll('a[href*="author"]')) {
-			const query = new URL(link.getAttribute('href'), location.origin)
-				.searchParams.get('q');
-			const author = query?.match(/(?:^|\s)author:([^\s]+)/i)?.[1];
-			if (author) {
-				return author.replace(/^app\//i, '');
-			}
-		}
-	}
-
-	function decorateQueryCollapsedGroup(group, surface, author) {
-		const representative = group[0];
-		const signature = `${location.pathname}:${surface}:author:${author.toLowerCase()}:${group
-			.map(item => `${item.repository}#${item.number}`)
-			.sort()
-			.join(',')}`;
-		const button = document.createElement('button');
-		button.className = 'github-inbox-tuner-collapse-toggle github-inbox-tuner-list-collapse-toggle';
-		button.type = 'button';
-		const icon = document.createElement('span');
-		icon.className = 'github-inbox-tuner-collapse-icon';
-		const text = document.createElement('span');
-		const itemLabel = surface === 'pulls' ? 'PRs' : 'issues';
-		text.textContent = isDependencyUpdateAuthor(author)
-			? `${group.length} dependency updates`
-			: `${group.length} ${itemLabel} by ${author}`;
-		button.append(icon, text);
-
-		const updateExpandedState = expanded => {
-			representative.row.classList.toggle(
-				'github-inbox-tuner-collapse-representative--expanded',
-				expanded,
-			);
-			button.setAttribute('aria-expanded', String(expanded));
-			button.title = expanded
-				? `Collapse these ${itemLabel}`
-				: `Expand ${group.length} ${itemLabel}`;
-			for (const {row} of group) {
-				row.classList.toggle(
-					'github-inbox-tuner-query-member--collapsed',
-					row !== representative.row && !expanded,
-				);
-			}
-		};
-		button.addEventListener('click', () => {
-			const expanded = !expandedNotificationStacks.has(signature);
-			if (expanded) {
-				expandedNotificationStacks.add(signature);
-			} else {
-				expandedNotificationStacks.delete(signature);
-			}
-			updateExpandedState(expanded);
-		});
-		updateExpandedState(expandedNotificationStacks.has(signature));
-		const title = representative.row.querySelector(
-			'.markdown-title, [data-testid="issue-row-title-link"]',
-		) ?? [...representative.row.querySelectorAll('a[href]')].find(link => (
-			/^\/[^/]+\/[^/]+\/(?:pull|issues)\/\d+/.test(
-				new URL(link.getAttribute('href'), location.origin).pathname,
-			)
-		));
-		title?.after(button);
-	}
-
-	function updateQueryListCollapses(surface) {
-		if (!['pulls', 'issues'].includes(surface)) {
-			return;
-		}
-		for (const toggle of document.querySelectorAll(
-			'.github-inbox-tuner-list-collapse-toggle',
-		)) {
-			toggle.remove();
-		}
-		for (const row of document.querySelectorAll(
-			'.github-inbox-tuner-query-member--collapsed',
-		)) {
-			row.classList.remove('github-inbox-tuner-query-member--collapsed');
-		}
-		const groups = new Map();
-		for (const target of getListBulkTargets(surface)) {
-			if (target.row.closest('[aria-label*="pinned issues" i]')) {
-				continue;
-			}
-			const author = getQueryListItemAuthor(target.row);
-			if (
-				!author
-				|| (
-					!options.collapseSameAuthorNotifications
-					&& !(options.collapseDependencyUpdates && isDependencyUpdateAuthor(author))
-				)
-			) {
-				continue;
-			}
-			const key = author.toLowerCase();
-			const group = groups.get(key) ?? [];
-			group.push({...target, author});
-			groups.set(key, group);
-		}
-		for (const group of groups.values()) {
-			if (group.length > 1) {
-				decorateQueryCollapsedGroup(group, surface, group[0].author);
-			}
-		}
-	}
-
-	function scheduleQueryListCollapseRefresh(surface) {
-		clearTimeout(queryListCollapseRefresh);
-		queryListCollapseRefresh = setTimeout(() => {
-			updateQueryListCollapses(surface);
-		}, 250);
 	}
 
 	function updateFilteredDisclosures(rows) {
@@ -1993,7 +1411,7 @@
 	async function waitForBulkControl(predicate, timeout = 3000) {
 		const startedAt = Date.now();
 		while (Date.now() - startedAt < timeout) {
-			const match = [...document.querySelectorAll(
+			const match = [...document.querySelectorAll<HTMLElement>(
 				'button, summary, [role="menuitem"], [role="menuitemcheckbox"]',
 			)]
 				.find(element => !element.hidden && predicate(element));
@@ -2006,7 +1424,7 @@
 
 	async function executeNativeListStep(step, targets) {
 		for (const target of targets) {
-			const checkbox = target.row.querySelector('input[type="checkbox"]');
+			const checkbox = target.row.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
 			if (checkbox && !checkbox.checked) {
 				checkbox.click();
 			}
@@ -2014,7 +1432,7 @@
 		await new Promise(resolve => setTimeout(resolve, 100));
 		const labelAction = step.type.startsWith('label:');
 		const triggerPattern = labelAction ? /^Labels?$/i : /^Mark as$/i;
-		const trigger = [...document.querySelectorAll('.js-issue-triage-menu > summary')]
+		const trigger = [...document.querySelectorAll<HTMLElement>('.js-issue-triage-menu > summary')]
 			.find(element => triggerPattern.test(element.textContent.trim()))
 			?? await waitForBulkControl(element => (
 				triggerPattern.test(element.textContent.trim())
@@ -2211,7 +1629,7 @@
 			};
 	}
 
-	function getOwnerSurfaceConfig(surface, owner) {
+	function getOwnerSurfaceConfig(surface: Surface, owner?: string) {
 		const override = options.ownerViewOverrides?.[owner]?.[surface];
 		if (surface === 'notifications') {
 			return Array.isArray(override?.rules) && override.rules.length > 0
@@ -2223,18 +1641,18 @@
 			: getGlobalSurfaceConfig(surface);
 	}
 
-	function getInlineEditorAnchor(surface, repository) {
+	function getInlineEditorAnchor(surface, repository): HTMLElement | null {
 		if (!repository) {
-			return document.querySelector('#github-inbox-tuner-views');
+			return document.querySelector<HTMLElement>('#github-inbox-tuner-views');
 		}
 		if (surface === 'notifications') {
-			for (const list of document.querySelectorAll('.js-notifications-list')) {
+			for (const list of document.querySelectorAll<HTMLElement>('.js-notifications-list')) {
 				if (getNotificationRepository(list) === repository) {
 					return list;
 				}
 			}
 		}
-		return document.querySelector('#github-inbox-tuner-views');
+		return document.querySelector<HTMLElement>('#github-inbox-tuner-views');
 	}
 
 	function createInlineEditorHelp(surface) {
@@ -2408,9 +1826,13 @@
 		return section;
 	}
 
-	function openInlineViewEditor(surface, repository, explicitAnchor) {
+	function openInlineViewEditor(
+		surface: Surface,
+		repository?: string,
+		explicitAnchor?: HTMLElement,
+	) {
 		const existing = document.querySelector('#github-inbox-tuner-inline-editor');
-		existing?.querySelector('[data-action="cancel"]')?.click();
+		existing?.querySelector<HTMLButtonElement>('[data-action="cancel"]')?.click();
 
 		const anchor = explicitAnchor ?? getInlineEditorAnchor(surface, repository);
 		if (!anchor) {
@@ -2535,7 +1957,7 @@
 
 				const controls = document.createElement('div');
 				controls.className = 'github-inbox-tuner-editor-controls';
-				for (const [label, labelText, disabled, handler] of [
+				for (const [label, labelText, disabled, handler] of ([
 					['↑', 'Move up', index === 0, () => {
 						[items[index - 1], items[index]] = [items[index], items[index - 1]];
 						render();
@@ -2550,7 +1972,7 @@
 						ensureDefault();
 						render();
 					}],
-				]) {
+				] as Array<[string, string, boolean, () => void]>)) {
 					const button = document.createElement('button');
 					button.type = 'button';
 					button.textContent = label;
@@ -2721,7 +2143,7 @@
 		add.type = 'button';
 		add.textContent = surface === 'notifications' ? 'Add rule' : 'Add view';
 		add.addEventListener('click', () => {
-			const item = {
+			const item: NotificationRule = {
 				id: `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
 				label: surface === 'notifications' ? 'New rule' : 'New view',
 				dsl: surface === 'notifications'
@@ -2834,15 +2256,15 @@
 		return issueSearchForm ?? searchForm?.parentElement?.parentElement ?? searchForm;
 	}
 
-	function getActiveQueryView(surface) {
+	function getActiveQueryView(surface: Surface) {
 		const query = new URL(location.href).searchParams.get('q')
-			?? document.querySelector('main input[name="q"]')?.value
+			?? document.querySelector<HTMLInputElement>('main input[name="q"]')?.value
 			?? '';
 		const normalized = normalizeQuery(query);
 		return getViews(surface).find(view => normalizeQuery(view.dsl) === normalized)?.id;
 	}
 
-	function createViewChip(surface, view, defaultViewId) {
+	function createViewChip(surface: Surface, view: ViewDefinition, defaultViewId: string) {
 		const isNotifications = surface === 'notifications';
 		const chip = document.createElement(isNotifications ? 'button' : 'a');
 		chip.className = 'github-inbox-tuner-view-chip';
@@ -2858,7 +2280,7 @@
 				updateNotificationVisibility();
 			});
 		} else {
-			chip.href = buildViewUrl(view.dsl);
+			(chip as HTMLAnchorElement).href = buildViewUrl(view.dsl);
 		}
 
 		const label = document.createElement('span');
@@ -2870,7 +2292,7 @@
 		return chip;
 	}
 
-	function createEditAction(surface) {
+	function createEditAction(surface: Surface) {
 		const element = document.createElement('button');
 		element.className = 'github-inbox-tuner-view-action';
 		element.dataset.action = 'edit';
@@ -2886,7 +2308,7 @@
 		return element;
 	}
 
-	function updateViewChipCount(chip, count, activeViewId) {
+	function updateViewChipCount(chip: HTMLElement | null, count, activeViewId) {
 		if (!chip) {
 			return;
 		}
@@ -2955,12 +2377,12 @@
 		edit?.before(menu);
 	}
 
-	function updateViewBar(surface) {
+	function updateViewBar(surface: Surface) {
 		if (surface !== getSurface()) {
 			return;
 		}
 
-		let bar = document.querySelector('#github-inbox-tuner-views');
+		let bar = document.querySelector<HTMLElement>('#github-inbox-tuner-views');
 		if (!bar) {
 			bar = document.createElement('nav');
 			bar.id = 'github-inbox-tuner-views';
@@ -2998,7 +2420,7 @@
 		const activeViewId = (surface === 'notifications'
 			? activeNotificationView
 			: getActiveQueryView(surface)) ?? defaultView.id;
-		for (const chip of bar.querySelectorAll('.github-inbox-tuner-view-chip')) {
+		for (const chip of bar.querySelectorAll<HTMLElement>('.github-inbox-tuner-view-chip')) {
 			const active = chip.dataset.viewId === activeViewId;
 			chip.classList.toggle('github-inbox-tuner-view-chip--active', active);
 			if (active) {
@@ -3057,7 +2479,7 @@
 		return count;
 	}
 
-	function scheduleQueryViewCounts(surface) {
+	function scheduleQueryViewCounts(surface: Surface) {
 		clearTimeout(viewCountRefresh);
 		viewCountRefresh = setTimeout(async () => {
 			const counts = await Promise.all(
@@ -3080,7 +2502,7 @@
 		}, 300);
 	}
 
-	function redirectToDefaultView(surface) {
+	function redirectToDefaultView(surface: Surface) {
 		clearTimeout(redirectAttempt);
 		if (
 			!['pulls', 'issues'].includes(surface)
@@ -3128,7 +2550,7 @@
 
 	async function loadOptions() {
 		const [storedOptions] = await Promise.all([
-			chrome.storage.sync.get(defaults),
+			chrome.storage.sync.get(Object.keys(defaults)),
 			hydratePullRequestChecksCache(),
 			hydratePullRequestLabelsCache(),
 		]);
@@ -3194,7 +2616,7 @@
 		const onlyExtensionControlsChanged = childListMutations.length > 0
 			&& childListMutations.every(mutation => (
 			[...mutation.addedNodes, ...mutation.removedNodes].every(node => (
-				node.nodeType !== Node.ELEMENT_NODE
+				!(node instanceof Element)
 					|| node.classList.contains('github-inbox-tuner-collapse-toggle')
 					|| node.classList.contains('github-inbox-tuner-view-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-repository-bulk-actions')
@@ -3220,10 +2642,11 @@
 			) {
 				return false;
 			}
+			const target = mutation.target;
 			const oldClasses = new Set((mutation.oldValue ?? '').split(/\s+/));
 			return ['notification-archived', 'notification-unread'].some(
 				className => oldClasses.has(className)
-					!== mutation.target.classList.contains(className),
+					!== target.classList.contains(className),
 			);
 		});
 		if (notificationStateChanged) {
