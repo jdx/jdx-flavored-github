@@ -38,6 +38,22 @@ import {createQueryListCollapsing} from './query-collapsing.js';
 import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 
 (() => {
+	function isExtensionContextInvalidated(reason: unknown): boolean {
+		const message = reason instanceof Error
+			? reason.message
+			: String((reason as {message?: unknown})?.message ?? reason);
+		return message.includes('Extension context invalidated');
+	}
+
+	// Reloading an unpacked extension invalidates the previous content-script
+	// world while its fetches and timers can still be settling. Chrome discards
+	// that work, so suppress only its expected lifecycle rejection.
+	window.addEventListener('unhandledrejection', event => {
+		if (isExtensionContextInvalidated(event.reason)) {
+			event.preventDefault();
+		}
+	});
+
 	let builtInNotificationRules;
 	let builtInViews;
 	const defaults = defaultOptions;

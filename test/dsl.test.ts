@@ -236,6 +236,9 @@ assert.doesNotMatch(
 	'Do not add compatibility or migration paths before the first release',
 );
 assert.match(contentSource, /scheduleRecentNotificationsAlertRefresh\(\);/);
+assert.match(contentSource, /window\.addEventListener\('unhandledrejection'/);
+assert.match(contentSource, /isExtensionContextInvalidated\(event\.reason\)/);
+assert.match(contentSource, /event\.preventDefault\(\)/);
 assert.match(contentSource, /svg\.octicon-inbox/);
 assert.match(contentSource, /new URL\('\/search\/count'/);
 assert.match(contentSource, /showAsReason/);
