@@ -236,6 +236,9 @@ assert.doesNotMatch(
 	'Do not add compatibility or migration paths before the first release',
 );
 assert.match(contentSource, /scheduleRecentNotificationsAlertRefresh\(\);/);
+assert.match(contentSource, /window\.addEventListener\('unhandledrejection'/);
+assert.match(contentSource, /isExtensionContextInvalidated\(event\.reason\)/);
+assert.match(contentSource, /event\.preventDefault\(\)/);
 assert.match(contentSource, /svg\.octicon-inbox/);
 assert.match(contentSource, /new URL\('\/search\/count'/);
 assert.match(contentSource, /showAsReason/);
@@ -251,7 +254,6 @@ assert.match(backgroundSource, /chrome\.runtime\.openOptionsPage\(\)/);
 assert.match(contentSource, /event\.target\.closest\('\.github-inbox-tuner-settings-button'\)/);
 assert.match(contentSource, /event\.stopPropagation\(\)/);
 assert.match(contentSource, /scheduleHeaderSettingsButton/);
-assert.match(contentSource, /if \(!options\.showHeaderSettingsButton\)/);
 assert.match(optionsSource, /showHeaderSettingsButton: 'show-header-settings-button'/);
 assert.match(optionsHtmlSource, /id="show-header-settings-button"/);
 assert.match(contentSource, /chip\.hidden = count === 0 && chip\.dataset\.viewId !== activeViewId/);
@@ -261,6 +263,9 @@ assert.match(contentSource, /scheduleNotificationViewRefresh/);
 assert.match(contentSource, /attributeOldValue: true/);
 assert.match(contentSource, /!className\.includes\('notificationIndicator'\)/);
 assert.match(contentCssSource, /\.github-inbox-tuner-settings-icon/);
+assert.match(contentCssSource, /\.github-inbox-tuner-status--pending::after/);
+assert.match(contentCssSource, /height: 8px/);
+assert.match(contentCssSource, /width: 8px/);
 assert.match(contentSource, /list\.closest\('\.js-notifications-group'\)/);
 assert.match(contentSource, /updateRepositoryBulkActions/);
 assert.match(contentSource, /github-inbox-tuner-repository-actions/);
