@@ -82,10 +82,10 @@ export function createQueryListCollapsing({
 		)) {
 			row.classList.remove('github-inbox-tuner-query-member--expanded');
 		}
-		for (const content of document.querySelectorAll(
-			'.github-inbox-tuner-stack-primary-content',
+		for (const row of document.querySelectorAll(
+			'.github-inbox-tuner-query-representative',
 		)) {
-			content.classList.remove('github-inbox-tuner-stack-primary-content');
+			row.classList.remove('github-inbox-tuner-query-representative');
 		}
 		for (const row of document.querySelectorAll(
 			'.github-inbox-tuner-collapse-representative--expanded',
@@ -185,15 +185,8 @@ export function createQueryListCollapsing({
 		button.addEventListener('click', toggleExpanded);
 		chevron.addEventListener('click', toggleExpanded);
 		updateExpandedState(expandedGroups.has(signature));
-		const title = representative.row.querySelector(
-			'.markdown-title, [data-testid="issue-row-title-link"]',
-		) ?? [...representative.row.querySelectorAll<HTMLAnchorElement>('a[href]')].find(link => (
-			/^\/[^/]+\/[^/]+\/(?:pull|issues)\/\d+/.test(link.pathname)
-		));
-		const primaryContent = title?.closest('.flex-auto.min-width-0')
-			?? title?.parentElement;
-		primaryContent?.classList.add('github-inbox-tuner-stack-primary-content');
-		primaryContent?.append(chevron);
+		representative.row.classList.add('github-inbox-tuner-query-representative');
+		representative.row.append(chevron);
 		representative.row.after(button);
 	}
 

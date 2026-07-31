@@ -18,10 +18,16 @@
 }
 
 .github-inbox-tuner-query-member--expanded {
+	background: linear-gradient(
+		to right,
+		var(--bgColor-muted, var(--color-canvas-subtle)) 0 16px,
+		transparent 16px
+	);
 	border-left: 0 !important;
 	box-sizing: border-box;
-	margin-left: 16px !important;
-	width: calc(100% - 16px) !important;
+	margin-left: 0 !important;
+	padding-left: 16px !important;
+	width: 100% !important;
 }
 
 .notifications-list-item.github-inbox-tuner-dimmed {
@@ -140,11 +146,13 @@
 .github-inbox-tuner-list-collapse-chevron {
 	margin: 0;
 	position: absolute;
-	right: 8px;
-	top: 8px;
+	right: 44px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 1;
 }
 
-.github-inbox-tuner-stack-primary-content {
+.github-inbox-tuner-query-representative {
 	position: relative;
 }
 
