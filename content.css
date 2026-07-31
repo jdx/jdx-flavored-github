@@ -928,6 +928,15 @@
 
 .github-inbox-tuner-status--pending {
 	color: var(--fgColor-attention, var(--color-attention-fg, #9a6700));
+	font-size: 0;
+}
+
+.github-inbox-tuner-status--pending::after {
+	background: currentColor;
+	border-radius: 50%;
+	content: "";
+	height: 8px;
+	width: 8px;
 }
 
 @media (max-width: 767px) {
