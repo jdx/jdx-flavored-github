@@ -130,7 +130,7 @@ const builtInNotificationRules: NotificationRule[] = [
 	const builtInDefaultViewIds = {
 		notifications: 'focused',
 		pulls: 'ready',
-		issues: 'assigned',
+		issues: 'all',
 	};
 	const bulkActionTypes: Record<Surface, BulkActionType[]> = {
 		notifications: [

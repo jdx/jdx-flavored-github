@@ -66,6 +66,7 @@ for (const surface of ['notifications', 'pulls', 'issues'] as const) {
 		surface,
 	));
 }
+assert.equal(dsl.builtInDefaultViewIds.issues, 'all');
 assert.throws(
 	() => dsl.validateBulkActions([{
 		id: 'example',

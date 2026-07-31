@@ -31,7 +31,7 @@ For me, this fits my workflow because PR notifications that someone else needs t
 
 ## Pull Requests / Issues
 
-You can default the pull request and issue list pages on repos to different filters. The default is to hide draft PRs not created by me. I don't use issues in my projects so there is no default view, but you can create your own if you like.
+You can default the pull request and issue list pages on repos to different filters. Pull requests default to Ready, which shows open, non-draft PRs. Issues default to All.
 
 You customize per repo/org or globally.
 
