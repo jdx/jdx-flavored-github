@@ -19,6 +19,7 @@ import {
 	orderStackItems,
 } from './grouping.js';
 import {
+	filterNotificationRowsForFolder,
 	getNotificationFacts,
 	getNotificationRepository,
 	getPullRequestReference,
@@ -256,12 +257,16 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		if (!getViews('notifications').some(view => view.id === activeNotificationView)) {
 			activeNotificationView = getViews('notifications')[0].id;
 		}
-		const rows = document.querySelectorAll<HTMLElement>('.notifications-list-item');
-		for (const row of rows) {
+		const allRows = document.querySelectorAll<HTMLElement>('.notifications-list-item');
+		for (const row of allRows) {
 			applyCachedPullRequestFacts(row);
 			applyCachedPullRequestLabelFacts(row);
 			classifyNotification(row);
 		}
+		const rows = filterNotificationRowsForFolder(
+			allRows,
+			showsArchivedNotifications(),
+		);
 
 		updateViewBar('notifications');
 		updateFilteredDisclosures(rows);
@@ -2548,7 +2553,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			return;
 		}
 		const targets = surface === 'notifications'
-			? [...document.querySelectorAll('.notifications-list-item')]
+			? filterNotificationRowsForFolder(
+				document.querySelectorAll('.notifications-list-item'),
+				showsArchivedNotifications(),
+			)
 				.filter(row => matchesNotificationExpression(
 					row,
 					view,
@@ -2622,11 +2630,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		}
 		updateViewBulkActions(bar, surface, activeViewId);
 		if (surface === 'notifications') {
-			const rows = [...document.querySelectorAll('.notifications-list-item')]
-				.filter(row => (
-					showsArchivedNotifications()
-					|| !row.classList.contains('notification-archived')
-				));
+			const rows = filterNotificationRowsForFolder(
+				document.querySelectorAll('.notifications-list-item'),
+				showsArchivedNotifications(),
+			);
 			for (const view of surfaceViews) {
 				const count = rows.filter(row => matchesNotificationView(row, view.id)).length;
 				updateViewChipCount(
