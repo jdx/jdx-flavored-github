@@ -20,7 +20,8 @@
 .github-inbox-tuner-query-member--expanded {
 	background: linear-gradient(
 		to right,
-		var(--bgColor-muted, var(--color-canvas-subtle)) 0 16px,
+		var(--bgColor-muted, var(--color-canvas-subtle)) 0 14px,
+		var(--borderColor-muted, var(--color-border-muted)) 14px 16px,
 		transparent 16px
 	);
 	border-left: 0 !important;
@@ -144,11 +145,14 @@
 }
 
 .github-inbox-tuner-list-collapse-chevron {
+	flex-basis: 24px;
+	font-size: 14px;
+	height: 24px;
 	margin: 0;
 	position: absolute;
 	right: 44px;
-	top: 50%;
-	transform: translateY(-50%);
+	top: 8px;
+	width: 24px;
 	z-index: 1;
 }
 

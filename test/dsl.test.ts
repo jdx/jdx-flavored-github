@@ -334,9 +334,9 @@ assert.match(contentSource, /github-inbox-tuner-list-check-status/);
 assert.match(contentCssSource, /\.github-inbox-tuner-query-member--collapsed/);
 assert.match(
 	contentCssSource,
-	/\.github-inbox-tuner-query-member--expanded\s*\{[^}]*background:\s*linear-gradient\([^}]*border-left:\s*0 !important;[^}]*margin-left:\s*0 !important;[^}]*padding-left:\s*16px !important;[^}]*width:\s*100% !important;/s,
+	/\.github-inbox-tuner-query-member--expanded\s*\{[^}]*background:\s*linear-gradient\([^}]*14px 16px[^}]*border-left:\s*0 !important;[^}]*margin-left:\s*0 !important;[^}]*padding-left:\s*16px !important;[^}]*width:\s*100% !important;/s,
 );
-assert.match(contentCssSource, /\.github-inbox-tuner-list-collapse-chevron\s*\{[^}]*position:\s*absolute;[^}]*right:\s*44px;[^}]*top:\s*50%;[^}]*transform:\s*translateY\(-50%\);/s);
+assert.match(contentCssSource, /\.github-inbox-tuner-list-collapse-chevron\s*\{[^}]*font-size:\s*14px;[^}]*height:\s*24px;[^}]*position:\s*absolute;[^}]*right:\s*44px;[^}]*top:\s*8px;[^}]*width:\s*24px;/s);
 assert.match(
 	contentCssSource,
 	/\.github-inbox-tuner-collapse-toggle\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*width:\s*100%;/s,
