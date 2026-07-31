@@ -1,0 +1,821 @@
+.notifications-list-item.github-inbox-tuner-hidden {
+	display: none !important;
+}
+
+.notifications-list-item.github-inbox-tuner-stack-member--collapsed {
+	display: none !important;
+}
+
+.notifications-list-item.github-inbox-tuner-dimmed {
+	opacity: 0.58;
+}
+
+.github-inbox-tuner-recent-alert--checking,
+.github-inbox-tuner-recent-alert--hidden {
+	display: none !important;
+}
+
+.github-inbox-tuner-settings-button {
+	flex: 0 0 auto;
+}
+
+.github-inbox-tuner-settings-icon {
+	display: inline-block;
+	font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: -0.7px;
+	line-height: 1;
+	text-transform: lowercase;
+}
+
+/* Refined GitHub's CSS-only clean-notifications feature cannot be disabled. */
+.js-notifications-group [id^="notification"] {
+	flex-direction: column !important;
+}
+
+.js-notifications-group [id^="notification"] > .d-flex > .f6 {
+	font-size: 12px !important;
+}
+
+.js-notifications-group [id^="notification"] > .d-flex > .f6 > span {
+	display: inline !important;
+	font-size: inherit !important;
+	margin: 0 !important;
+	word-break: normal !important;
+}
+
+.github-inbox-tuner-collapse-toggle {
+	align-items: center;
+	background: none;
+	border: 0;
+	color: var(--fgColor-accent, var(--color-accent-fg));
+	cursor: pointer;
+	display: inline-flex;
+	font: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	gap: 4px;
+	line-height: 18px;
+	margin-left: 6px;
+	padding: 0;
+	vertical-align: baseline;
+	white-space: nowrap;
+}
+
+.github-inbox-tuner-collapse-toggle:hover {
+	text-decoration: underline;
+}
+
+.github-inbox-tuner-collapse-icon::before {
+	content: "▸";
+	display: inline-block;
+	transition: transform 100ms ease;
+}
+
+.github-inbox-tuner-collapse-representative--expanded
+	.github-inbox-tuner-collapse-icon::before {
+	transform: rotate(90deg);
+}
+
+#github-inbox-tuner-views {
+	align-items: center;
+	align-content: flex-start;
+	box-sizing: border-box;
+	display: flex;
+	flex-wrap: wrap !important;
+	gap: 4px;
+	height: auto !important;
+	margin: 0 0 12px;
+	max-width: 100% !important;
+	min-width: 0;
+	min-height: 26px;
+	overflow: visible !important;
+	padding: 0;
+	width: 100% !important;
+}
+
+.github-inbox-tuner-views--compact {
+	gap: 3px !important;
+}
+
+.github-inbox-tuner-views--compact .github-inbox-tuner-view-chip {
+	font-size: 11px;
+	gap: 3px;
+	padding-inline: 6px;
+}
+
+.github-inbox-tuner-views--compact .github-inbox-tuner-view-count {
+	font-size: 10px;
+	line-height: 15px;
+	min-width: 15px;
+	padding-inline: 3px;
+}
+
+.github-inbox-tuner-views--compact .github-inbox-tuner-view-action[data-action="edit"] {
+	padding-left: 7px;
+}
+
+.github-inbox-tuner-views--wrapped {
+	flex-wrap: wrap !important;
+	height: auto !important;
+	overflow: visible !important;
+	padding-bottom: 0 !important;
+}
+
+.github-inbox-tuner-view-chip {
+	align-items: center;
+	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
+	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
+	border-radius: 999px;
+	color: var(--fgColor-default, var(--color-fg-default));
+	cursor: pointer;
+	display: inline-flex;
+	flex: 0 0 auto;
+	font: inherit;
+	font-size: 12px;
+	font-weight: 500;
+	gap: 5px;
+	line-height: 22px;
+	padding: 0 8px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.github-inbox-tuner-view-chip[hidden] {
+	display: none;
+}
+
+.github-inbox-tuner-view-chip:hover {
+	background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg));
+	text-decoration: none;
+}
+
+.github-inbox-tuner-view-chip--active {
+	background: var(--bgColor-accent-emphasis, var(--color-accent-emphasis));
+	border-color: var(--borderColor-accent-emphasis, var(--color-accent-emphasis));
+	color: var(--fgColor-onEmphasis, var(--color-fg-on-emphasis));
+}
+
+.github-inbox-tuner-view-chip--active:hover {
+	background: var(--bgColor-accent-emphasis, var(--color-accent-emphasis));
+}
+
+.github-inbox-tuner-view-count {
+	background: color-mix(in srgb, currentColor 12%, transparent);
+	border-radius: 999px;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+	line-height: 16px;
+	min-width: 16px;
+	padding: 0 4px;
+	text-align: center;
+}
+
+.github-inbox-tuner-view-action {
+	background: none;
+	border: 0;
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	cursor: pointer;
+	flex: 0 0 auto;
+	font: inherit;
+	font-size: 12px;
+	line-height: 22px;
+	padding: 0 4px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.github-inbox-tuner-view-action[data-action="edit"] {
+	border-left: 1px solid var(--borderColor-default, var(--color-border-default));
+	margin-left: 2px;
+	padding-left: 10px;
+}
+
+.github-inbox-tuner-view-action:hover {
+	color: var(--fgColor-accent, var(--color-accent-fg));
+	text-decoration: underline;
+}
+
+.github-inbox-tuner-bulk-menu {
+	flex: 0 0 auto;
+	position: relative;
+}
+
+.github-inbox-tuner-bulk-menu > summary {
+	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
+	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
+	border-radius: 6px;
+	color: var(--fgColor-default, var(--color-fg-default));
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 24px;
+	list-style: none;
+	padding: 0 8px;
+	white-space: nowrap;
+}
+
+.github-inbox-tuner-bulk-menu > summary::-webkit-details-marker {
+	display: none;
+}
+
+.github-inbox-tuner-bulk-menu > summary::after {
+	content: " ▾";
+}
+
+.github-inbox-tuner-bulk-menu-list {
+	background: var(--overlay-bgColor, var(--color-canvas-overlay));
+	border: 1px solid var(--borderColor-default, var(--color-border-default));
+	border-radius: 6px;
+	box-shadow: var(--shadow-floating-small, 0 8px 24px rgba(140, 149, 159, 0.2));
+	display: grid;
+	min-width: 190px;
+	padding: 4px;
+	position: absolute;
+	right: 0;
+	top: calc(100% + 4px);
+	z-index: 100;
+}
+
+.github-inbox-tuner-bulk-menu-list button {
+	align-items: center;
+	background: none;
+	border: 0;
+	border-radius: 4px;
+	color: var(--fgColor-default, var(--color-fg-default));
+	cursor: pointer;
+	display: flex;
+	font: inherit;
+	font-size: 12px;
+	gap: 6px;
+	padding: 6px 8px;
+	text-align: left;
+}
+
+.github-inbox-tuner-bulk-menu-list button:hover {
+	background: var(--control-transparent-bgColor-hover, var(--color-action-list-item-default-hover-bg));
+}
+
+.github-inbox-tuner-bulk-dialog {
+	background: var(--overlay-bgColor, var(--color-canvas-overlay));
+	border: 1px solid var(--borderColor-default, var(--color-border-default));
+	border-radius: 10px;
+	box-shadow: var(--shadow-floating-large, 0 12px 40px rgba(0, 0, 0, 0.35));
+	color: var(--fgColor-default, var(--color-fg-default));
+	max-height: min(720px, 85vh);
+	max-width: min(620px, calc(100vw - 32px));
+	overflow: auto;
+	padding: 18px;
+	width: 100%;
+}
+
+.github-inbox-tuner-bulk-dialog::backdrop {
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.github-inbox-tuner-bulk-dialog h2 {
+	font-size: 18px;
+	margin: 0 0 8px;
+}
+
+.github-inbox-tuner-bulk-dialog p {
+	margin: 6px 0;
+}
+
+.github-inbox-tuner-bulk-dialog-steps,
+.github-inbox-tuner-bulk-dialog-targets {
+	margin: 10px 0;
+	padding-left: 24px;
+}
+
+.github-inbox-tuner-bulk-dialog-targets {
+	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 6px;
+	max-height: 260px;
+	overflow: auto;
+	padding-block: 8px;
+	padding-right: 10px;
+}
+
+.github-inbox-tuner-bulk-dialog-status {
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	min-height: 20px;
+}
+
+.github-inbox-tuner-bulk-dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.github-inbox-tuner-bulk-dialog-actions button {
+	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
+	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
+	border-radius: 6px;
+	color: var(--fgColor-default, var(--color-fg-default));
+	cursor: pointer;
+	font: inherit;
+	font-weight: 600;
+	padding: 6px 12px;
+}
+
+.github-inbox-tuner-bulk-dialog-actions .github-inbox-tuner-bulk-dialog-apply {
+	background: var(--button-danger-bgColor-rest, var(--color-btn-danger-bg));
+	border-color: var(--button-danger-borderColor-rest, var(--color-btn-danger-border));
+	color: var(--button-danger-fgColor-rest, var(--color-btn-danger-text));
+}
+
+#github-inbox-tuner-inline-editor {
+	background: var(--bgColor-default, var(--color-canvas-default));
+	border: 1px solid var(--borderColor-default, var(--color-border-default));
+	border-radius: 6px;
+	box-sizing: border-box;
+	margin: 0 0 12px;
+	max-width: 100%;
+	padding: 12px;
+	width: 100%;
+}
+
+.github-inbox-tuner-editor-heading {
+	align-items: baseline;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 12px;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.github-inbox-tuner-editor-status {
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	font-size: 12px;
+}
+
+.github-inbox-tuner-editor-heading-actions {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+}
+
+.github-inbox-tuner-editor-heading-actions button {
+	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
+	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
+	border-radius: 6px;
+	color: var(--fgColor-default, var(--color-fg-default));
+	cursor: pointer;
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	min-height: 28px;
+	padding: 3px 9px;
+}
+
+.github-inbox-tuner-editor-help {
+	background: var(--bgColor-accent-muted, var(--color-accent-subtle));
+	border: 1px solid var(--borderColor-accent-muted, var(--color-accent-muted));
+	border-radius: 6px;
+	color: var(--fgColor-default, var(--color-fg-default));
+	font-size: 12px;
+	margin-bottom: 10px;
+	padding: 10px 12px;
+}
+
+.github-inbox-tuner-editor-help p {
+	margin: 5px 0;
+}
+
+.github-inbox-tuner-editor-help ul {
+	display: grid;
+	gap: 4px;
+	margin: 8px 0;
+	padding-left: 20px;
+}
+
+.github-inbox-tuner-editor-help code {
+	background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
+	border-radius: 4px;
+	font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+	padding: 1px 4px;
+}
+
+.github-inbox-tuner-editor-help pre {
+	background: var(--bgColor-default, var(--color-canvas-default));
+	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 6px;
+	margin: 5px 0 0;
+	overflow-x: auto;
+	padding: 8px;
+	white-space: pre;
+}
+
+.github-inbox-tuner-editor-help pre code {
+	background: none;
+	padding: 0;
+}
+
+.github-inbox-tuner-editor-list {
+	display: grid;
+	gap: 4px;
+}
+
+.github-inbox-tuner-editor-workspace {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(180px, 0.75fr) minmax(260px, 1.25fr);
+}
+
+.github-inbox-tuner-editor-master-row {
+	align-items: stretch;
+	background: var(--bgColor-muted, var(--color-canvas-subtle));
+	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 6px;
+	display: flex;
+	min-width: 0;
+	padding: 3px;
+}
+
+.github-inbox-tuner-editor-master-row--selected {
+	border-color: var(--borderColor-accent-emphasis, var(--color-accent-emphasis));
+	box-shadow: inset 3px 0 var(--borderColor-accent-emphasis, var(--color-accent-emphasis));
+}
+
+.github-inbox-tuner-editor-master-select {
+	background: none;
+	border: 0;
+	color: inherit;
+	cursor: pointer;
+	display: grid;
+	flex: 1 1 auto;
+	gap: 1px;
+	min-width: 0;
+	padding: 5px 7px;
+	text-align: left;
+}
+
+.github-inbox-tuner-editor-master-name {
+	font-size: 12px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.github-inbox-tuner-editor-master-meta {
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	font-size: 10px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.github-inbox-tuner-editor-detail {
+	background: var(--bgColor-muted, var(--color-canvas-subtle));
+	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 6px;
+	display: grid;
+	gap: 9px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.github-inbox-tuner-bulk-actions-editor {
+	border-top: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	display: grid;
+	gap: 7px;
+	padding-top: 10px;
+}
+
+.github-inbox-tuner-bulk-actions-heading,
+.github-inbox-tuner-bulk-action-header,
+.github-inbox-tuner-bulk-action-step {
+	align-items: center;
+	display: flex;
+	gap: 6px;
+	justify-content: space-between;
+}
+
+.github-inbox-tuner-bulk-actions-editor > p {
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	font-size: 11px;
+	margin: 0;
+}
+
+.github-inbox-tuner-bulk-actions-list,
+.github-inbox-tuner-bulk-action-steps {
+	display: grid;
+	gap: 6px;
+}
+
+.github-inbox-tuner-bulk-action-card {
+	background: var(--bgColor-default, var(--color-canvas-default));
+	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 6px;
+	display: grid;
+	gap: 6px;
+	padding: 7px;
+}
+
+.github-inbox-tuner-bulk-action-header input,
+.github-inbox-tuner-bulk-action-step input,
+.github-inbox-tuner-bulk-action-step select {
+	background: var(--bgColor-default, var(--color-canvas-default));
+	border: 1px solid var(--control-borderColor-rest, var(--color-input-border));
+	border-radius: 5px;
+	box-sizing: border-box;
+	color: var(--fgColor-default, var(--color-fg-default));
+	font: inherit;
+	min-width: 0;
+	padding: 4px 6px;
+}
+
+.github-inbox-tuner-bulk-action-header input,
+.github-inbox-tuner-bulk-action-step select {
+	flex: 1 1 auto;
+}
+
+.github-inbox-tuner-bulk-action-step input {
+	flex: 0 1 130px;
+}
+
+.github-inbox-tuner-bulk-actions-heading button,
+.github-inbox-tuner-bulk-action-card button {
+	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
+	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
+	border-radius: 5px;
+	color: var(--fgColor-default, var(--color-fg-default));
+	cursor: pointer;
+	font: inherit;
+	font-size: 11px;
+	padding: 3px 7px;
+}
+
+.github-inbox-tuner-editor-field {
+	display: grid;
+	font-size: 12px;
+	font-weight: 600;
+	gap: 4px;
+}
+
+.github-inbox-tuner-editor-name,
+.github-inbox-tuner-editor-dsl {
+	background: var(--bgColor-default, var(--color-canvas-default));
+	border: 1px solid var(--control-borderColor-rest, var(--color-input-border));
+	border-radius: 6px;
+	box-sizing: border-box;
+	color: var(--fgColor-default, var(--color-fg-default));
+	font: inherit;
+	min-width: 0;
+	padding: 6px 8px;
+	width: 100%;
+}
+
+.github-inbox-tuner-editor-dsl {
+	font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	min-height: 72px;
+	resize: vertical;
+	white-space: pre-wrap;
+}
+
+.github-inbox-tuner-editor-choices {
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 11px;
+	gap: 6px 14px;
+}
+
+.github-inbox-tuner-editor-choices label {
+	align-items: center;
+	display: inline-flex;
+	gap: 5px;
+}
+
+.github-inbox-tuner-editor-controls,
+.github-inbox-tuner-editor-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.github-inbox-tuner-editor-controls button,
+.github-inbox-tuner-editor-actions button {
+	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
+	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
+	border-radius: 6px;
+	color: var(--fgColor-default, var(--color-fg-default));
+	cursor: pointer;
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	min-height: 30px;
+	padding: 4px 9px;
+}
+
+.github-inbox-tuner-editor-controls button {
+	min-width: 30px;
+	padding-inline: 6px;
+}
+
+.github-inbox-tuner-editor-controls button:disabled {
+	cursor: default;
+	opacity: 0.4;
+}
+
+.github-inbox-tuner-editor-actions {
+	justify-content: flex-end;
+	margin-top: 10px;
+}
+
+.github-inbox-tuner-editor-actions .github-inbox-tuner-editor-save {
+	background: var(--button-primary-bgColor-rest, var(--color-btn-primary-bg));
+	border-color: var(--button-primary-borderColor-rest, var(--color-btn-primary-border));
+	color: var(--button-primary-fgColor-rest, var(--color-btn-primary-text));
+}
+
+.github-inbox-tuner-filtered {
+	align-items: center;
+	box-sizing: border-box;
+	border-top: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0;
+	min-height: 24px;
+	padding: 8px clamp(8px, 2vw, 16px);
+	width: 100%;
+}
+
+.github-inbox-tuner-filtered-label {
+	font-size: 12px;
+	font-weight: 600;
+	margin-right: 2px;
+}
+
+.github-inbox-tuner-filtered-pill {
+	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
+	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
+	border-radius: 999px;
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	cursor: pointer;
+	font: inherit;
+	font-size: 11px;
+	line-height: 20px;
+	padding: 0 7px;
+}
+
+.github-inbox-tuner-filtered-pill:hover {
+	background: var(--button-default-bgColor-hover, var(--color-btn-hover-bg));
+	color: var(--fgColor-default, var(--color-fg-default));
+}
+
+.github-inbox-tuner-filtered-pill--active {
+	background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
+	border-color: var(--borderColor-accent-emphasis, var(--color-accent-emphasis));
+	color: var(--fgColor-accent, var(--color-accent-fg));
+}
+
+.notifications-list-item.github-inbox-tuner-revealed {
+	box-shadow: inset 3px 0 var(--borderColor-accent-emphasis, var(--color-accent-emphasis));
+}
+
+.github-inbox-tuner-statuses {
+	align-items: center;
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-left: 6px;
+	max-width: 100%;
+	vertical-align: baseline;
+}
+
+.github-inbox-tuner-check-status {
+	align-items: center;
+	display: inline-flex;
+	margin-left: 6px;
+	vertical-align: baseline;
+}
+
+.github-inbox-tuner-original-pr-icon--hidden {
+	display: none !important;
+}
+
+.github-inbox-tuner-conflict-icon {
+	color: var(--fgColor-danger, var(--color-danger-fg));
+	fill: currentColor;
+	flex: 0 0 auto;
+}
+
+.github-inbox-tuner-status {
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	font-size: 11px;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.github-inbox-tuner-status::before {
+	content: "·";
+	margin-right: 4px;
+}
+
+.github-inbox-tuner-status--check {
+	align-items: center;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 700;
+	justify-content: center;
+	line-height: 1;
+	min-width: 12px;
+}
+
+.github-inbox-tuner-status--check::before {
+	content: none;
+	margin: 0;
+}
+
+.github-inbox-tuner-status--failure {
+	color: var(--fgColor-danger, #f85149) !important;
+}
+
+.github-inbox-tuner-status--priority {
+	color: var(--fgColor-accent, var(--color-accent-fg));
+}
+
+.github-inbox-tuner-status--success {
+	color: var(--fgColor-success, var(--color-success-fg, #1a7f37));
+}
+
+.github-inbox-tuner-status--pending {
+	color: var(--fgColor-attention, var(--color-attention-fg, #9a6700));
+}
+
+@media (max-width: 767px) {
+	#github-inbox-tuner-views {
+		margin-bottom: 10px;
+		padding-bottom: 3px;
+	}
+
+	.github-inbox-tuner-view-chip,
+	.github-inbox-tuner-view-action {
+		min-height: 28px;
+	}
+
+	.github-inbox-tuner-statuses {
+		margin-left: 4px;
+	}
+
+	.github-inbox-tuner-check-status {
+		margin-left: 4px;
+	}
+
+	.github-inbox-tuner-editor-row {
+		grid-template-columns: 72px minmax(0, 1fr) auto;
+	}
+
+	.github-inbox-tuner-editor-workspace {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 480px) {
+	#github-inbox-tuner-views {
+		gap: 3px;
+	}
+
+	.github-inbox-tuner-view-chip {
+		gap: 4px;
+		padding-inline: 7px;
+	}
+
+	.github-inbox-tuner-view-action[data-action="edit"] {
+		margin-left: 1px;
+		padding-left: 8px;
+	}
+
+	.github-inbox-tuner-filtered-label {
+		flex-basis: 100%;
+		margin-bottom: 2px;
+	}
+
+	.github-inbox-tuner-statuses {
+		display: flex;
+		margin: 3px 0 0;
+		width: 100%;
+	}
+
+	.github-inbox-tuner-status:first-child::before {
+		content: none;
+		margin: 0;
+	}
+
+	#github-inbox-tuner-inline-editor {
+		padding: 10px;
+	}
+
+	.github-inbox-tuner-editor-actions {
+		justify-content: flex-start;
+	}
+
+}

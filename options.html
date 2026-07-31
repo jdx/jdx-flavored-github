@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>jdx Flavored GitHub options</title>
+		<link rel="stylesheet" href="options.css">
+	</head>
+	<body>
+		<main>
+			<header>
+				<div class="brand-header">
+					<img src="icons/icon.svg" width="48" height="48" alt="">
+					<div>
+						<h1>jdx Flavored GitHub</h1>
+						<p>Choose the view GitHub opens with on each surface.</p>
+					</div>
+				</div>
+			</header>
+
+			<section>
+				<h2>Saved views</h2>
+				<p class="help">
+					The selected radio is that surface’s default. Use the arrow buttons
+					to reorder its chips.
+				</p>
+				<div class="scope-controls">
+					<label for="view-scope">
+						<span>Editing</span>
+						<select id="view-scope">
+							<option value="global">Global views</option>
+						</select>
+					</label>
+					<label for="new-repository">
+						<span>Add repository</span>
+						<span class="add-repository-row">
+							<input id="new-repository" type="text" placeholder="owner/repository" spellcheck="false">
+							<button id="add-repository" type="button">Add</button>
+						</span>
+					</label>
+					<label for="new-owner">
+						<span>Add user or organization</span>
+						<span class="add-repository-row">
+							<input id="new-owner" type="text" placeholder="owner" spellcheck="false">
+							<button id="add-owner" type="button">Add</button>
+						</span>
+					</label>
+					<button id="remove-scope" type="button" hidden>Remove overrides</button>
+				</div>
+				<p id="scope-help" class="help">
+					Global views apply unless a user, organization, or repository supplies an override.
+				</p>
+
+				<div class="view-editor" data-surface="notifications">
+					<div class="view-editor-heading">
+						<div>
+							<h3>Notifications</h3>
+							<p>
+								GitHub filter syntax plus <code>AND</code>, <code>OR</code>,
+								<code>NOT</code>, exclusions, and parentheses.
+							</p>
+						</div>
+						<div class="view-editor-actions">
+							<button class="restore-views" type="button">Restore default filters</button>
+							<button class="add-view" type="button">Add view</button>
+						</div>
+					</div>
+					<div class="view-list"></div>
+					<p class="dsl-help">
+						Qualifiers: <code>repo:</code>, <code>org:</code>,
+						<code>author:</code>, <code>reason:</code>, <code>is:</code>,
+						<code>rule:</code>,
+						<code>draft:true</code>, <code>conflict:true</code>,
+						<code>label:release</code>, <code>status:failure</code>,
+						<code>status:pending</code>, <code>status:success</code>,
+						<code>bot:true</code>, and <code>title:/pattern/i</code>.
+					</p>
+				</div>
+
+				<div class="view-editor" data-surface="pulls">
+					<div class="view-editor-heading">
+						<div>
+							<h3>Pull requests</h3>
+							<p>Uses GitHub’s pull-request search syntax.</p>
+						</div>
+						<div class="view-editor-actions">
+							<button class="restore-views" type="button">Restore default filters</button>
+							<button class="add-view" type="button">Add view</button>
+						</div>
+					</div>
+					<div class="view-list"></div>
+				</div>
+
+				<div class="view-editor" data-surface="issues">
+					<div class="view-editor-heading">
+						<div>
+							<h3>Issues</h3>
+							<p>Uses GitHub’s issue search syntax.</p>
+						</div>
+						<div class="view-editor-actions">
+							<button class="restore-views" type="button">Restore default filters</button>
+							<button class="add-view" type="button">Add view</button>
+						</div>
+					</div>
+					<div class="view-list"></div>
+				</div>
+			</section>
+
+			<section>
+				<h2>Appearance</h2>
+				<div class="settings">
+					<label class="checkbox">
+						<input id="show-header-settings-button" type="checkbox" checked>
+						<span>Show the <strong>jdx</strong> settings button in GitHub’s header</span>
+					</label>
+				</div>
+			</section>
+
+			<section>
+				<h2>Notification grouping</h2>
+				<p class="section-intro">
+					Related pull-request notifications collapse into one expandable row.
+				</p>
+				<div class="settings">
+					<label class="checkbox">
+						<input id="collapse-dependency-updates" type="checkbox" checked>
+						<span>Collapse Dependabot and Renovate pull requests</span>
+					</label>
+					<label class="checkbox">
+						<input id="collapse-same-author-notifications" type="checkbox">
+						<span>Collapse other pull requests from the same author</span>
+					</label>
+					<label class="checkbox">
+						<input id="dim-bot-notifications" type="checkbox" checked>
+						<span>Dim notifications whose visible participants are all bots</span>
+					</label>
+				</div>
+			</section>
+
+			<section>
+				<h2>Backup and sync</h2>
+				<p class="section-intro">
+					Chrome sync stores these settings in your Chrome profile when browser
+					sync is enabled. JSON backup includes every preference, global view,
+					rule, and repository override; temporary GitHub caches are excluded.
+				</p>
+				<div class="backup-actions">
+					<button id="export-settings" type="button">Export JSON</button>
+					<button id="import-settings" type="button">Import JSON</button>
+					<input id="import-settings-file" type="file" accept="application/json,.json" hidden>
+				</div>
+			</section>
+
+			<footer class="actions">
+				<button id="save" class="primary" type="button">Save changes</button>
+				<button id="reset" type="button">Restore defaults</button>
+				<output id="status" aria-live="polite"></output>
+			</footer>
+		</main>
+
+		<script src="dsl.js"></script>
+		<script src="options.js"></script>
+	</body>
+</html>

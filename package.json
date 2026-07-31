@@ -1,0 +1,8 @@
+{
+	"name": "jdx-flavored-github",
+	"private": true,
+	"scripts": {
+		"test": "node --test"
+	},
+	"type": "module"
+}
