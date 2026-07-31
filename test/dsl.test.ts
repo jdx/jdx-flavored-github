@@ -319,6 +319,8 @@ assert.match(contentCssSource, /\.github-inbox-tuner-query-member--collapsed/);
 assert.match(contentSource, /github-inbox-tuner-collapse-placeholders/);
 assert.match(contentSource, /github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentSource, /github-inbox-tuner-query-member--expanded/);
+assert.match(contentSource, /Collapse dependency updates by/);
+assert.doesNotMatch(contentSource, /Collapse nested items/);
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder/);
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentCssSource, /\.notifications-list-item\.github-inbox-tuner-revealed/);

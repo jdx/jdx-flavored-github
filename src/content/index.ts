@@ -907,7 +907,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		return [...groups.values()].filter(group => group.length > 1);
 	}
 
-	function decorateCollapsedGroup(group, signature, label) {
+	function decorateCollapsedGroup(group, signature, label, expandedLabel) {
 		const baseKeys = new Set(group.map(item => item.metadata.baseKey));
 		const representative = group.find(item => !baseKeys.has(item.metadata.headKey)) ?? group[0];
 		const button = document.createElement('button');
@@ -933,9 +933,9 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
-			text.textContent = expanded ? 'Collapse nested items' : label;
+			text.textContent = expanded ? expandedLabel : label;
 			button.title = expanded
-				? 'Collapse these pull request notifications'
+				? expandedLabel
 				: `Expand ${group.length} related pull request notifications`;
 			for (const {row} of group) {
 				row.classList.toggle(
@@ -1075,6 +1075,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 					stack,
 					signature,
 					`${stack.length - 1} more ${stack.length === 2 ? 'PR' : 'PRs'} in stack`,
+					`Collapse ${stack.length}-PR stack`,
 				);
 			}
 
@@ -1092,6 +1093,9 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 					isDependencyUpdateAuthor(author)
 						? `${authorGroup.length - 1} more dependency ${authorGroup.length === 2 ? 'update' : 'updates'}`
 						: `${authorGroup.length - 1} more ${authorGroup.length === 2 ? 'PR' : 'PRs'} by ${author}`,
+					isDependencyUpdateAuthor(author)
+						? `Collapse dependency updates by ${author}`
+						: `Collapse PRs by ${author}`,
 				);
 			}
 		}

@@ -66,6 +66,9 @@ export function createQueryListCollapsing({
 			? `${group.length - 1} more dependency ${group.length === 2 ? 'update' : 'updates'}`
 			: `${group.length - 1} more ${group.length === 2 ? itemLabel.slice(0, -1) : itemLabel} by ${author}`;
 		const collapsedLabel = text.textContent;
+		const expandedLabel = isDependencyUpdateAuthor(author)
+			? `Collapse dependency updates by ${author}`
+			: `Collapse ${itemLabel} by ${author}`;
 		button.append(icon, placeholders, text);
 
 		const updateExpandedState = (expanded: boolean) => {
@@ -74,9 +77,9 @@ export function createQueryListCollapsing({
 				expanded,
 			);
 			button.setAttribute('aria-expanded', String(expanded));
-			text.textContent = expanded ? 'Collapse nested items' : collapsedLabel;
+			text.textContent = expanded ? expandedLabel : collapsedLabel;
 			button.title = expanded
-				? `Collapse these ${itemLabel}`
+				? expandedLabel
 				: `Expand ${group.length} ${itemLabel}`;
 			for (const {row} of group) {
 				row.classList.toggle(
