@@ -4,55 +4,45 @@
 
 # jdx Flavored GitHub
 
-<img width="714" height="564" alt="Screenshot 2026-07-31 at 01 04 30" src="https://github.com/user-attachments/assets/8b9b7b5a-2142-4500-be68-adc5818f863d" />
+A Chrome extension to fix behavior in ways that @jdx needs for his workflow—but customizable too so it should fit yours!
+Right now this modifies:
 
-A Chrome extension for turning GitHub’s Notifications, Pull Requests, and
-Issues pages into focused, saved views.
+- GitHub Notification Inbox
+- GitHub Pull Request Repo List
+- GitHub Issue Repo List
 
 It works on GitHub’s existing pages, uses your existing session, and does not
-require an API token or background polling.
+require an API token. No promises it will always remain that way but so far I don't seem to need a token.
 
-## Focus on the work that needs you
+## Focused inbox
 
-**Focused** is the default notification view. It cuts common noise such as
-drafts, team mentions, and blocked work on someone else’s PR while keeping your
-own failing, pending, or conflicting PRs in view.
+The killer feature for me is the Focused inbox:
 
-Focused is a normal editable rule, not a special mode. Its shipped definition
-prioritizes direct mentions, but every part of that behavior can be changed in
-the view editor.
+<img width="714" height="564" alt="Screenshot 2026-07-31 at 01 04 30" src="https://github.com/user-attachments/assets/8b9b7b5a-2142-4500-be68-adc5818f863d" />
 
-The notification page also gains PR check and merge-conflict status,
-per-repository explanations for filtered items, and collapsible groups for
-related notifications. Pull Request and Issue lists support the same
-collapsible author and dependency-update groups.
+You can customize what "focused" means for you but by default it's:
 
-## Make it yours
+- any notification that directly tags me (not a group) is always displayed
+- hides notifications about draft PRs unless authored by me
+- hides notifications about PRs with merge conflicts or PR check status as pending/failed unless authored by me
+- collapses stacked PRs or PRs by dependabot/renovate into a single, expandable item
 
-Build count-bearing views for Notifications, Pull Requests, and Issues, choose
-the default for each page, and edit them without leaving GitHub. Views support
-three inheritance levels:
+For me, this fits my workflow because PR notifications that someone else needs to finish I simply won't see until it's ready.
 
-```text
-Global → user or organization → repository
-```
+## Pull Requests / Issues
 
-Each level can override Notifications, Pull Requests, and Issues independently.
-Removing an override resumes inheritance from its parent.
+You can default the pull request and issue list pages on repos to different filters. The default is to hide draft PRs not created by me. I don't use issues in my projects so there is no default view, but you can create your own if you like.
 
-Settings sync through Chrome. They can also be exported and imported as JSON.
+You customize per repo/org or globally.
 
-## Act on a whole view
+## Views/Rules
 
-Rules and views can define named actions for:
+jdx Flavored Markdown has 2 important concepts:
 
-- Marking notifications Done, read, or unread
-- Closing or reopening pull requests and issues
-- Adding or removing labels
-- Opening matches in tabs
+- **Views** – the pill you see above PR/issue/notification lists. e.g.: "focused" or "my failing PRs"
+- **Rules** – subcomponent of views, shown at the _bottom_ of the list to subfilter. e.g.: "my draft PRs" or "other created issue" or "dependabot PRs"
 
-Every action previews the loaded targets before changing anything. Unloaded
-search results are never assumed to be in scope.
+The reason for 2 is it makes it easy to add back in items filtered out for different reasons without needing to add all of the items.
 
 ## Install for development
 
@@ -136,12 +126,7 @@ or data collection.
 
 ## Refined GitHub
 
-jdx Flavored GitHub can run alongside Refined GitHub. It neutralizes the
-notification-row layout changes from Refined GitHub’s CSS-only
-`clean-notifications` feature, so there is no setting to disable.
-
-Refined GitHub’s `notifications-ui`, `sticky-notifications-actions`,
-`select-notifications`, and `open-all-notifications` features are compatible.
+jdx Flavored GitHub can run alongside Refined GitHub.
 
 ## Development
 
