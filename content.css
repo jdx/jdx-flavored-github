@@ -18,6 +18,15 @@
 	width: calc(100% - 16px) !important;
 }
 
+.github-inbox-tuner-query-member--expanded {
+	border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted)) !important;
+	border-top: 0 !important;
+}
+
+.github-inbox-tuner-query-member--last {
+	border-bottom: 0 !important;
+}
+
 .notifications-list-item.github-inbox-tuner-dimmed {
 	opacity: 0.58;
 }
@@ -129,6 +138,11 @@
 
 .github-inbox-tuner-collapse-chevron:hover {
 	background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
+}
+
+.github-inbox-tuner-list-collapse-chevron {
+	margin: 0 8px 0 4px;
+	order: 99;
 }
 
 .github-inbox-tuner-collapse-chevron:focus-visible {

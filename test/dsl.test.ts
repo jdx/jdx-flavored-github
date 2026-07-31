@@ -326,11 +326,14 @@ assert.match(contentSource, /event\.preventDefault\(\)/);
 assert.match(contentSource, /event\.stopPropagation\(\)/);
 assert.match(contentSource, /representative\.row\.after\(button\)/);
 assert.match(contentSource, /primaryContent\?\.after\(chevron\)/);
+assert.match(contentSource, /actionArea\.append\(chevron\)/);
+assert.match(contentSource, /github-inbox-tuner-query-member--last/);
 assert.match(contentSource, /notification-list-item-link/);
 assert.match(contentSource, /notification-list-item-link'\)\?\.after\(chevron\)/);
 assert.match(contentSource, /github-inbox-tuner-collapse-chevron/);
 assert.match(contentSource, /github-inbox-tuner-list-check-status/);
 assert.match(contentCssSource, /\.github-inbox-tuner-query-member--collapsed/);
+assert.match(contentCssSource, /\.github-inbox-tuner-query-member--expanded\s*\{[^}]*border-bottom:\s*1px solid[^}]*border-top:\s*0 !important;/s);
 assert.match(
 	contentCssSource,
 	/\.github-inbox-tuner-collapse-toggle\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*width:\s*100%;/s,
