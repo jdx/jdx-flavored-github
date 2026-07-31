@@ -1,120 +1,95 @@
+<p align="center">
+  <img src="icons/icon.svg" width="96" height="96" alt="jdx Flavored GitHub logo">
+</p>
+
 # jdx Flavored GitHub
 
-jdx Flavored GitHub is a tokenless Chrome extension that adds saved, count-bearing
-views to GitHub's native Notifications, Pull Requests, and Issues pages.
+A Chrome extension for turning GitHub’s Notifications, Pull Requests, and
+Issues pages into focused, saved views.
 
-- Starts with useful built-in notification, pull-request, and issue views.
-- Lets you add, rename, reorder, edit, and delete view chips.
-- Lets you choose a separate default view for each surface.
-- Supports global, user/organization, and repository-specific Notification,
-  Pull Request, and Issue views.
-- Adds an **Edit views** action that switches the current GitHub page into an
-  inline view editor.
-- Includes expandable, surface-specific syntax help inside the inline editor.
-- Uses a compact master/detail editor: all views and rules remain visible as
-  single-line summaries while only the selected item exposes its multiline DSL.
-- Adds a branded button beside GitHub’s notification control on every page;
-  it opens extension settings, including notification grouping defaults.
-- Syncs all user-controlled settings through Chrome sync and supports strict
-  JSON export/import for portable backups. Temporary GitHub data caches remain
-  local and are not exported.
-- Stores only customized surfaces as overrides, so untouched users receive new
-  built-in views when the extension updates.
-- Provides **Restore default filters** per surface in the editor.
-- Gives notification views a safe boolean DSL; PR and issue views use GitHub’s
-  native search syntax.
-- Defines Focused as editable DSL composed from named, reusable notification
-  rules for drafts, team mentions, direct mentions, check states, and merge
-  conflicts. Conflicts on someone else’s PR are hidden; conflicts on your own
-  PR remain visible.
-- Hides saved-view pills with no matches while keeping the active view visible.
-- Keeps closed and merged notifications visible by default so they can be
-  deliberately marked Done.
-- Lets any notification rule, pull-request view, or issue view define opt-in
-  bulk-action recipes. Every run previews the currently loaded matches before
-  applying notification state changes, PR close/reopen, issue close/reopen,
-  labels, or opening the matches in tabs.
-- Ships “Mark as done” on the hidden Merged notifications rule, so each
-  repository gets that action only when it has matching notifications.
-- Lets you hide the **jdx** settings shortcut from GitHub’s header while keeping
-  the options page available from Chrome’s extension management page.
-- Lets direct @username mentions bypass every Focused suppression rule.
-- Shows GitHub's global blue notification indicator only when the global
-  default notification view contains unread notifications.
-- Shows GitHub's live “new unread notifications” banner only when at least one
-  newly arrived notification matches that same global default view.
-- Displays PR check state—passing, pending, or failing—beside the PR number,
-  plus direct mentions on notification rows. A conflicting PR instead gets a
-  distinct red conflict icon in place of its ordinary draft/open/merged icon.
-- Summarizes filtered notifications as count-bearing reason pills beneath each
-  repository and lets each reason be revealed independently per project.
-- Marks every temporarily revealed row with a slim blue left-edge indicator,
-  so newly added rows remain obvious in long lists without adding more text.
-- Keeps one real PR notification visible for each stack and adds an inline
-  expander that reveals the remaining notifications.
-- Collapses Dependabot and Renovate PRs by default, with an optional setting to
-  group other PR notifications from the same author.
+It works on GitHub’s existing pages, uses your existing session, and does not
+require an API token or background polling.
 
-It works independently of Refined GitHub and can be installed alongside it.
+## What it does
 
-## Pre-release policy
+### A quieter notification inbox
 
-This extension has not been published. Until its first public release, replace
-schemas and defaults directly: do not add legacy syntax, compatibility aliases,
-or storage migrations.
+- Adds count-bearing views such as **Focused**, **Mentions**, and
+  **My failing PRs**.
+- Hides zero-count views while keeping the active view visible.
+- Filters drafts, team mentions, failing or pending checks on other people’s
+  PRs, and merge conflicts on other people’s PRs from the default Focused view.
+- Always lets direct mentions through.
+- Keeps closed and merged notifications available so they can be marked Done
+  without suppressing future activity.
+- Shows check status next to the PR number and uses a distinct red icon for
+  merge conflicts.
+- Collapses PR stacks and dependency updates behind inline expanders.
+- Explains filtered items with per-repository reason pills.
 
-## Refined GitHub compatibility
+### Views you can change
 
-Refined GitHub's `clean-notifications` feature is CSS-only and does not appear
-as a switch in Refined GitHub's settings. jdx Flavored GitHub neutralizes that
-feature's notification-row layout rules automatically, so you do not need to
-disable Refined GitHub.
+Views can be edited directly on GitHub with the compact master/detail editor.
+They support three inheritance levels:
 
-Refined GitHub's `notifications-ui`, `sticky-notifications-actions`,
-`select-notifications`, and `open-all-notifications` features are compatible.
-The `subscribed`, `mention`, and similar labels at the right of notification
-rows are native GitHub notification reasons, not added by Refined GitHub.
-
-## Test locally
-
-Run the automated checks:
-
-```sh
-npm test
+```text
+Global → user or organization → repository
 ```
 
-Then load the extension in Chrome:
+Each level can override Notifications, Pull Requests, and Issues independently.
+Removing an override resumes inheritance from its parent.
 
-1. Open `chrome://extensions`.
-2. Enable **Developer mode**.
-3. Click **Load unpacked**.
-4. Select this directory.
-5. Open a repository's **Pull requests** tab. The Ready view should be selected
-   by default and the chip bar should show GitHub result counts.
-6. Open a repository's **Issues** tab and verify its saved-view chips.
-7. Open <https://github.com/notifications>. The Focused chip should be selected,
-   each chip should show a count, and filtered rows should be summarized by
-   reason beneath their repository group.
-8. Click **Edit views** to edit names, ordering, DSL, and defaults without
-   leaving GitHub. Repository notification groups expose the same editor through
-   **Customize views**.
+Settings sync through Chrome. They can also be exported and imported as JSON.
 
-## View DSL
+### Previewed bulk actions
 
-Notification views use a superset of GitHub's notification filter syntax.
-GitHub-style whitespace means `AND`; explicit `AND`, `OR`, `NOT`, parentheses,
-and `-qualifier` exclusions are also supported.
+Rules and views can define named actions for:
 
-Native-style qualifiers include `repo:`, `org:`, `author:`, `reason:`, and
-`is:`. Named rules can be composed with `rule:rule-id`. The extension adds
-familiar PR-search qualifiers including `is:pr`,
-`is:issue`, `is:merged`, `draft:true`, `conflict:true`, `status:failure`, `status:pending`,
-`status:success`, `label:release`, `bot:true`, and `title:/pattern/i`. Quote
-labels containing spaces, for example `label:"release candidate"`.
+- Marking notifications Done, read, or unread
+- Closing or reopening pull requests and issues
+- Adding or removing labels
+- Opening matches in tabs
 
-Every notification item is a named rule. A rule can be exposed as a view chip,
-used as a filtered-reason pill, both, or kept as a helper rule. Focused is a
-view-chip rule composed from the shipped helpers:
+Every action previews the loaded targets before changing anything. Unloaded
+search results are never assumed to be in scope.
+
+## Install for development
+
+1. Clone this repository.
+2. Open `chrome://extensions`.
+3. Enable **Developer mode**.
+4. Click **Load unpacked**.
+5. Select the repository directory.
+
+After changing the source, reload the extension and refresh GitHub.
+
+## Notification rules
+
+Notification rules use GitHub-like qualifiers with boolean composition:
+
+```text
+reason:mention OR (reason:review-requested AND bot:false)
+```
+
+Whitespace means `AND`. Explicit `AND`, `OR`, `NOT`, parentheses, and
+`-qualifier` exclusions are supported.
+
+Available qualifiers include:
+
+```text
+repo:        org:          author:       reason:
+is:          rule:         draft:        conflict:
+status:      label:        bot:          title:/pattern/i
+```
+
+Labels containing spaces must be quoted:
+
+```text
+label:"release candidate"
+```
+
+Rules can be visible views, filtered-reason pills, or hidden helpers. The
+default Focused rule is composed entirely from helpers:
 
 ```text
 rule:direct-mention OR (
@@ -126,87 +101,59 @@ rule:direct-mention OR (
 )
 ```
 
-For example:
-
-```text
-reason:mention OR (reason:review-requested AND bot:false)
-```
-
-Personal rules can be added without changing the defaults shipped to other
-users. For example, a hidden filtered-reason rule named “Release PR” can use:
+For example, a personal hidden rule for release PRs could use:
 
 ```text
 is:pr label:release
 ```
 
-Focused can then add `AND NOT rule:release-pr`.
+Then add `AND NOT rule:release-pr` to Focused. This is intentionally not part of
+the shipped default.
 
-Pull request and issue views use GitHub search qualifiers directly, such as
-`is:open is:pr draft:false` or `is:open is:issue assignee:@me`.
+Pull Request and Issue views use GitHub’s search syntax directly:
 
-## View scopes
+```text
+is:open is:pr draft:false
+is:open is:issue assignee:@me
+```
 
-View inheritance is **Global → user/organization → repository**. Each scope can
-override its Notification, Pull Request, and Issue surfaces independently.
-Removing an override makes that surface inherit from its nearest configured
-parent immediately.
+## How metadata is loaded
 
-The top notification chips remain global because the inbox combines many
-repositories. Repository defaults apply on initial load; explicitly selecting a
-top chip applies that view inbox-wide. Filtered-reason pills remain scoped to
-each project.
+The extension reads GitHub’s same-origin pages and deferred status responses
+using the current browser session. Check results and PR metadata are cached
+locally for five minutes to avoid repeating work during navigation.
 
-Check-state rules load GitHub's native `status:failure`, `status:pending`,
-`status:success`, and `author:@me` searches for each repository represented in
-the inbox. Results are cached in Chrome local storage: five minutes as fresh
-data and up to one hour as immediate stale data while a background refresh
-runs. They do not use an API token.
+Exact per-PR check results take priority over GitHub search rollups, so a
+failure is not mislabeled as pending just because another check is still
+running. GitHub’s merge-box data supplies `conflict:true` and the conflict
+icon.
 
-GitHub search can report a pull request as pending while one check is still
-running even though another check has already failed. The extension therefore
-loads every notified PR page without the browser HTTP cache, follows GitHub’s
-deferred head-commit status endpoint, and treats that exact result as the
-higher-priority per-PR value; any known failure wins over the coarser search
-rollup.
+Chrome sync contains user-controlled settings only. Temporary GitHub metadata
+stays in local extension storage. The extension has no analytics, remote code,
+or data collection.
 
-Open pull requests also load GitHub’s native merge-box data. A
-`mergeStateStatus` of `DIRTY` powers `conflict:true`, the Focused helper rule,
-and the dedicated conflict icon.
+## Refined GitHub
 
-## Bulk-action recipes
+jdx Flavored GitHub can run alongside Refined GitHub. It neutralizes the
+notification-row layout changes from Refined GitHub’s CSS-only
+`clean-notifications` feature, so there is no setting to disable.
 
-Add actions to the selected rule or view from the same master/detail editor.
-An action has a name and one or more ordered steps. Notification recipes can
-mark matching notifications Done, read, or unread. Pull-request recipes can
-close or reopen PRs. Issue recipes can close or reopen issues. PR and issue
-recipes can also add or remove a label, and every surface can open matches in
-tabs.
+Refined GitHub’s `notifications-ui`, `sticky-notifications-actions`,
+`select-notifications`, and `open-all-notifications` features are compatible.
 
-Running an action always opens a confirmation preview listing the loaded
-targets. The extension never assumes unloaded search results are in scope.
-GitHub’s native lifecycle/label bulk form reloads the list, so those steps must
-be last in a multi-step recipe.
+## Development
 
-Stack detection reads the base and head branches embedded in GitHub's own PR
-pages, connects notified PRs whose branches form a chain, and caches that
-metadata for five minutes. It does not require Graphite metadata or an API
-token.
+Run the test suite:
 
-Dependency-update grouping uses the author embedded in the same page data.
-Same-author grouping for other contributors is available as an opt-in setting.
+```sh
+npm test
+```
 
-## Chrome Web Store release
+Before packaging:
 
-Upload `jdx-flavored-github-0.1.0.zip` from the release directory, complete the
-store listing and privacy declarations, and submit it for review.
+1. Test Notifications, Pull Requests, and Issues with the unpacked extension.
+2. Verify the version in `manifest.json`.
+3. Create a ZIP with `manifest.json` at its root.
 
-The extension has one purpose: making GitHub's native notification and pull
-request pages more actionable. It stores only user-facing settings in Chrome
-sync storage. It does not collect, transmit, or sell user data.
-
-## Updating
-
-1. Change `version` in `manifest.json`.
-2. Test the unpacked extension again.
-3. Zip the contents of this directory, with `manifest.json` at the root.
-4. Upload the new ZIP to the existing Chrome Web Store item.
+This project has not yet had a public release. Change schemas and built-in
+defaults directly until it does.
