@@ -25,7 +25,6 @@
 				"content.css"
 			],
 			"js": [
-				"dsl.js",
 				"content.js"
 			],
 			"run_at": "document_start"

@@ -48,12 +48,14 @@ The reason for 2 is it makes it easy to add back in items filtered out for diffe
 
 1. Clone this repository.
 2. Run `mise install` to install the pinned aube version.
-3. Open `chrome://extensions`.
-4. Enable **Developer mode**.
-5. Click **Load unpacked**.
-6. Select the repository directory.
+3. Run `aube build`.
+4. Open `chrome://extensions`.
+5. Enable **Developer mode**.
+6. Click **Load unpacked**.
+7. Select the repository's `dist` directory.
 
-After changing the source, reload the extension and refresh GitHub.
+Run `aube dev` while editing TypeScript. After a build, reload the extension
+and refresh GitHub.
 
 ## Notification rules
 
@@ -130,6 +132,11 @@ jdx Flavored GitHub can run alongside Refined GitHub.
 
 ## Development
 
+TypeScript source lives in `src/`. `aube build` typechecks and bundles the
+content script, options page, and service worker into the ignored `dist/`
+directory while copying the manifest, styles, HTML, and icons. Chrome should
+always load `dist`, not the repository root.
+
 Run the test suite:
 
 ```sh
@@ -138,9 +145,10 @@ aube test
 
 Before packaging:
 
-1. Test Notifications, Pull Requests, and Issues with the unpacked extension.
-2. Verify the version in `manifest.json`.
-3. Create a ZIP with `manifest.json` at its root.
+1. Run `aube test`.
+2. Test Notifications, Pull Requests, and Issues with `dist` loaded unpacked.
+3. Verify the version in `manifest.json`.
+4. Create a ZIP from `dist` with `manifest.json` at its root.
 
 This project has not yet had a public release. Change schemas and built-in
 defaults directly until it does.

@@ -1,7 +1,17 @@
-(() => {
-	'use strict';
+import type {
+	NotificationFacts,
+	NotificationRule,
+	Surface,
+	ViewDefinition,
+} from '../shared/types.js';
 
-	const builtInNotificationRules = [
+interface BulkActionType {
+	label: string;
+	needsValue?: boolean;
+	type: string;
+}
+
+const builtInNotificationRules: NotificationRule[] = [
 		{
 			id: 'focused',
 			label: 'Focused',
@@ -100,7 +110,7 @@
 			],
 		},
 	];
-	const builtInViews = {
+	const builtInViews: Record<Surface, ViewDefinition[]> = {
 		notifications: builtInNotificationRules.filter(rule => rule.showAsView),
 		pulls: [
 			{id: 'ready', label: 'Ready', dsl: 'is:open is:pr draft:false'},
@@ -122,7 +132,7 @@
 		pulls: 'ready',
 		issues: 'assigned',
 	};
-	const bulkActionTypes = {
+	const bulkActionTypes: Record<Surface, BulkActionType[]> = {
 		notifications: [
 			{type: 'notification:done', label: 'Mark as done'},
 			{type: 'notification:read', label: 'Mark as read'},
@@ -153,11 +163,11 @@
 		return JSON.parse(JSON.stringify(builtInNotificationRules));
 	}
 
-	function getBulkActionTypes(surface) {
+	function getBulkActionTypes(surface: Surface): BulkActionType[] {
 		return bulkActionTypes[surface] ?? [];
 	}
 
-	function validateBulkActions(items, surface) {
+	function validateBulkActions(items: ViewDefinition[], surface: Surface) {
 		const supportedTypes = new Map(
 			getBulkActionTypes(surface).map(action => [action.type, action]),
 		);
@@ -536,17 +546,16 @@
 		}
 	}
 
-	globalThis.GitHubInboxTunerDsl = {
-		builtInDefaultViewIds,
-		builtInNotificationRules,
-		builtInViews,
-		cloneBuiltInNotificationRules,
-		cloneBuiltInViews,
-		evaluateNotificationDsl,
-		getBulkActionTypes,
-		getNotificationQualifierValues,
-		parseNotificationDsl,
-		validateBulkActions,
-		validateNotificationRules,
-	};
-})();
+export {
+	builtInDefaultViewIds,
+	builtInNotificationRules,
+	builtInViews,
+	cloneBuiltInNotificationRules,
+	cloneBuiltInViews,
+	evaluateNotificationDsl,
+	getBulkActionTypes,
+	getNotificationQualifierValues,
+	parseNotificationDsl,
+	validateBulkActions,
+	validateNotificationRules,
+};

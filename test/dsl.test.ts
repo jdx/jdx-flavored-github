@@ -1,14 +1,10 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import vm from 'node:vm';
+import * as dsl from '../src/dsl/index.ts';
 
 const extensionRoot = new URL('../', import.meta.url);
-const dslSource = await readFile(new URL('dsl.js', extensionRoot), 'utf8');
 const contentCssSource = await readFile(new URL('content.css', extensionRoot), 'utf8');
 const optionsCssSource = await readFile(new URL('options.css', extensionRoot), 'utf8');
-const context = vm.createContext({});
-vm.runInContext(dslSource, context);
-const dsl = context.GitHubInboxTunerDsl;
 
 const facts = overrides => ({
 	author: 'jdx',
@@ -62,7 +58,7 @@ for (const view of dsl.builtInViews.notifications) {
 	assert.doesNotThrow(() => dsl.parseNotificationDsl(view.dsl), view.label);
 }
 assert.doesNotThrow(() => dsl.validateNotificationRules(dsl.builtInNotificationRules));
-for (const surface of ['notifications', 'pulls', 'issues']) {
+for (const surface of ['notifications', 'pulls', 'issues'] as const) {
 	assert.doesNotThrow(() => dsl.validateBulkActions(
 		surface === 'notifications'
 			? dsl.builtInNotificationRules
@@ -74,6 +70,7 @@ assert.throws(
 	() => dsl.validateBulkActions([{
 		id: 'example',
 		label: 'Example',
+		dsl: 'is:open is:pr',
 		actions: [{
 			id: 'bad-order',
 			label: 'Bad order',
@@ -187,28 +184,48 @@ assert.equal(manifest.version, '0.1.0');
 assert.equal(packageManifest.packageManager, 'aube@1.36.0');
 assert.deepEqual(
 	manifest.content_scripts[0].js,
-	['dsl.js', 'content.js'],
-	'DSL must load before the content script',
+	['content.js'],
+	'The content bundle must be self-contained',
 );
 for (const relativePath of [
 	'content.css',
-	'content.js',
-	'dsl.js',
 	'options.css',
 	'options.html',
-	'options.js',
 	'README.md',
 	'aube-lock.yaml',
 	'mise.toml',
+	'src/background.ts',
+	'src/content/index.ts',
+	'src/dsl/index.ts',
+	'src/options/index.ts',
+	'tsconfig.json',
+	'dist/background.js',
+	'dist/content.js',
+	'dist/options.js',
 ]) {
 	await assert.doesNotReject(() => readFile(new URL(relativePath, extensionRoot)));
 }
 
-const allText = await Promise.all(
-	['content.js', 'dsl.js', 'options.js', 'background.js', 'options.html']
-		.map(path => readFile(new URL(path, extensionRoot), 'utf8')),
-);
-const [contentSource, , optionsSource, backgroundSource, optionsHtmlSource] = allText;
+const contentSource = (await Promise.all([
+	'src/content/index.ts',
+	'src/content/grouping.ts',
+	'src/content/notification-dom.ts',
+	'src/content/page.ts',
+	'src/content/pull-request-metadata.ts',
+	'src/content/query-collapsing.ts',
+	'src/content/status.ts',
+].map(path => readFile(new URL(path, extensionRoot), 'utf8')))).join('\n');
+const dslSource = await readFile(new URL('src/dsl/index.ts', extensionRoot), 'utf8');
+const optionsSource = await readFile(new URL('src/options/index.ts', extensionRoot), 'utf8');
+const backgroundSource = await readFile(new URL('src/background.ts', extensionRoot), 'utf8');
+const optionsHtmlSource = await readFile(new URL('options.html', extensionRoot), 'utf8');
+const allText = [
+	contentSource,
+	dslSource,
+	optionsSource,
+	backgroundSource,
+	optionsHtmlSource,
+];
 assert.doesNotMatch(
 	allText.join('\n'),
 	/\b(?:legacy|migration)\b/i,
