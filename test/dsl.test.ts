@@ -105,6 +105,7 @@ assert.throws(
 const focused = dsl.builtInViews.notifications[0].dsl;
 assert.equal(evaluate(focused), true);
 assert.equal(evaluate(focused, {draft: true}), false);
+assert.equal(evaluate(focused, {draft: true, ownPullRequest: true}), true);
 assert.equal(evaluate(focused, {checkStatus: 'failure'}), false);
 assert.equal(evaluate(focused, {checkStatus: 'pending'}), false);
 assert.equal(evaluate(focused, {checkStatus: 'failure', ownPullRequest: true}), true);

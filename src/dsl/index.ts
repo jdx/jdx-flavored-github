@@ -16,7 +16,7 @@ const builtInNotificationRules: NotificationRule[] = [
 			id: 'focused',
 			label: 'Focused',
 			dsl: `rule:direct-mention OR (
-  NOT rule:draft
+  NOT (rule:draft AND NOT author:@me)
   AND NOT rule:team-mention
   AND NOT rule:other-failing
   AND NOT rule:other-pending
