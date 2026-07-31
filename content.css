@@ -89,9 +89,9 @@
 	margin: 0 0 12px;
 	max-width: 100% !important;
 	min-width: 0;
-	min-height: 26px;
+	min-height: 30px;
 	overflow: visible !important;
-	padding: 0;
+	padding: 2px 0 !important;
 	width: 100% !important;
 }
 
@@ -120,7 +120,7 @@
 	flex-wrap: wrap !important;
 	height: auto !important;
 	overflow: visible !important;
-	padding-bottom: 0 !important;
+	padding-block: 2px !important;
 }
 
 .github-inbox-tuner-view-chip {
@@ -128,6 +128,7 @@
 	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
 	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
 	border-radius: 999px;
+	box-sizing: border-box;
 	color: var(--fgColor-default, var(--color-fg-default));
 	cursor: pointer;
 	display: inline-flex;
@@ -136,8 +137,9 @@
 	font-size: 12px;
 	font-weight: 500;
 	gap: 5px;
-	line-height: 22px;
-	padding: 0 8px;
+	line-height: 20px;
+	min-height: 26px;
+	padding: 2px 8px;
 	text-decoration: none;
 	white-space: nowrap;
 }

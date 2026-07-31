@@ -271,6 +271,14 @@ assert.match(
 );
 assert.match(contentCssSource, /max-width:\s*100%\s*!important/);
 assert.match(contentCssSource, /width:\s*100%\s*!important/);
+assert.match(
+	contentCssSource,
+	/#github-inbox-tuner-views\s*\{[^}]*min-height:\s*30px;[^}]*padding:\s*2px 0\s*!important;/s,
+);
+assert.match(
+	contentCssSource,
+	/\.github-inbox-tuner-view-chip\s*\{[^}]*box-sizing:\s*border-box;[^}]*line-height:\s*20px;[^}]*min-height:\s*26px;[^}]*padding:\s*2px 8px;/s,
+);
 assert.match(contentSource, /bar\.style\.removeProperty\('max-width'\)/);
 assert.match(contentCssSource, /\.notifications-list-item\.github-inbox-tuner-revealed/);
 assert.match(contentCssSource, /\.github-inbox-tuner-editor-workspace/);
