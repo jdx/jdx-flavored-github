@@ -343,6 +343,7 @@ assert.match(
 );
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder\s*\{[^}]*border-bottom:\s*1px solid[^}]*height:\s*10px;[^}]*width:\s*100%;/s);
 assert.match(contentSource, /github-inbox-tuner-collapse-placeholders/);
+assert.match(contentSource, /Math\.min\(group\.length, 5\)/);
 assert.match(contentSource, /github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentSource, /github-inbox-tuner-query-member--expanded/);
 assert.match(contentSource, /Collapse dependency updates by/);
@@ -357,6 +358,10 @@ assert.match(contentSource, /function decorateCachedNotificationStacks\(\)/);
 assert.match(contentSource, /notificationStackGeneration\+\+;\s*decorateCachedNotificationStacks\(\);/s);
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-toggle\.github-inbox-tuner-collapse-toggle--expanded\s*\{[^}]*display:\s*none !important;/s);
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder/);
+assert.match(
+	contentCssSource,
+	/\.github-inbox-tuner-list-collapse-toggle\s*\{[^}]*background:\s*var\(--bgColor-muted, var\(--color-canvas-subtle\)\);[^}]*display:\s*grid;/s,
+);
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentCssSource, /\.notifications-list-item\.github-inbox-tuner-revealed/);
 assert.match(contentCssSource, /\.github-inbox-tuner-editor-workspace/);

@@ -97,6 +97,7 @@
 }
 
 .github-inbox-tuner-list-collapse-toggle {
+	background: var(--bgColor-muted, var(--color-canvas-subtle));
 	display: grid;
 }
 
