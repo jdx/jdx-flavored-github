@@ -150,5 +150,8 @@ That pull request updates the changelog and `manifest.json` version. Merging it
 creates a GitHub release, runs the full test suite, and attaches a Chrome-ready
 ZIP with `manifest.json` at its root.
 
+If packaging fails, rerunning the workflow resumes the latest draft release.
+The workflow can also be dispatched manually with a specific draft tag.
+
 This project has not yet had a public release. Change schemas and built-in
 defaults directly until it does.
