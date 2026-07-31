@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release-please:
+    name: Release pull request
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+      tag-name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - name: Open or update release pull request
+        id: release
+        uses: googleapis/release-please-action@cc1edfa270c1bf9b6af84f441c7a90d3c7f737da # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  package:
+    name: Package extension
+    needs: release-please
+    if: needs.release-please.outputs.release-created == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.release-please.outputs.tag-name }}
+      - name: Install tools
+        uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+        with:
+          cache_save: false
+      - name: Install dependencies
+        run: aube install --frozen-lockfile
+      - name: Test extension
+        run: aube run test
+      - name: Build Chrome extension archive
+        id: archive
+        env:
+          TAG_NAME: ${{ needs.release-please.outputs.tag-name }}
+        run: |
+          archive="jdx-flavored-github-${TAG_NAME}.zip"
+          (cd dist && zip -r "../${archive}" .)
+          echo "name=${archive}" >> "$GITHUB_OUTPUT"
+      - name: Retain workflow artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: chrome-extension-${{ needs.release-please.outputs.tag-name }}
+          path: ${{ steps.archive.outputs.name }}
+          if-no-files-found: error
+      - name: Attach archive to draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag-name }}
+          ARCHIVE: ${{ steps.archive.outputs.name }}
+        run: gh release upload "$TAG_NAME" "$ARCHIVE" --clobber
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag-name }}
+        run: gh release edit "$TAG_NAME" --draft=false
