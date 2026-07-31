@@ -1,6 +1,7 @@
 {
 	"name": "jdx-flavored-github",
 	"private": true,
+	"packageManager": "aube@1.36.0",
 	"scripts": {
 		"test": "node --test"
 	},

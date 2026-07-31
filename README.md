@@ -57,10 +57,11 @@ search results are never assumed to be in scope.
 ## Install for development
 
 1. Clone this repository.
-2. Open `chrome://extensions`.
-3. Enable **Developer mode**.
-4. Click **Load unpacked**.
-5. Select the repository directory.
+2. Run `mise install` to install the pinned aube version.
+3. Open `chrome://extensions`.
+4. Enable **Developer mode**.
+5. Click **Load unpacked**.
+6. Select the repository directory.
 
 After changing the source, reload the extension and refresh GitHub.
 
@@ -147,7 +148,7 @@ Refined GitHub’s `notifications-ui`, `sticky-notifications-actions`,
 Run the test suite:
 
 ```sh
-npm test
+aube test
 ```
 
 Before packaging:

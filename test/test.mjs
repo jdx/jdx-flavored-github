@@ -180,7 +180,11 @@ for (const invalid of [
 }
 
 const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionRoot), 'utf8'));
+const packageManifest = JSON.parse(
+	await readFile(new URL('package.json', extensionRoot), 'utf8'),
+);
 assert.equal(manifest.version, '0.1.0');
+assert.equal(packageManifest.packageManager, 'aube@1.36.0');
 assert.deepEqual(
 	manifest.content_scripts[0].js,
 	['dsl.js', 'content.js'],
@@ -194,6 +198,8 @@ for (const relativePath of [
 	'options.html',
 	'options.js',
 	'README.md',
+	'aube-lock.yaml',
+	'mise.toml',
 ]) {
 	await assert.doesNotReject(() => readFile(new URL(relativePath, extensionRoot)));
 }
