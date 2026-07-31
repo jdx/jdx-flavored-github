@@ -60,3 +60,45 @@ jobs:
             ci
             revert
             security
+
+  final:
+    name: Final
+    needs:
+      - test
+      - pull-request-title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    if: ${{ !cancelled() }}
+    steps:
+      - name: Gate on upstream job results
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          # The title check only applies to pull requests, so a skip on push or
+          # manual runs is expected. Every other upstream job must succeed.
+          skip_ok = {"pull-request-title"}
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          failed = False
+          for name, data in sorted(needs.items()):
+              result = data.get("result", "unknown")
+              if result == "success":
+                  print(f"::notice::{name}: {result}")
+              elif result == "skipped" and name in skip_ok:
+                  print(f"::notice::{name}: {result} (allowed to skip)")
+              else:
+                  print(f"::error::{name}: {result}")
+                  failed = True
+
+          if failed:
+              print("One or more upstream jobs did not complete successfully.")
+              sys.exit(1)
+
+          print("All CI jobs completed successfully.")
+          PY
