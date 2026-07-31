@@ -35,6 +35,7 @@ import type {
 	PullRequestReference,
 } from './pull-request-metadata.js';
 import {createQueryListCollapsing} from './query-collapsing.js';
+import {createHeaderSettingsController} from './header-settings.js';
 import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 
 (() => {
@@ -69,8 +70,6 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	let globalIndicatorRefresh;
 	let globalIndicatorRefreshInFlight;
 	let globalIndicatorUpdatedAt = 0;
-	let headerSettingsInsertionReady = false;
-	let headerSettingsRefresh;
 	let notificationStackRefresh;
 	let notificationStackGeneration = 0;
 	let notificationViewRefresh;
@@ -612,22 +611,9 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		));
 	}
 
-	function ensureHeaderSettingsButton() {
-		if (!options.showHeaderSettingsButton) {
-			document.querySelector('.github-inbox-tuner-settings-button')?.remove();
-			return;
-		}
-		if (document.querySelector('.github-inbox-tuner-settings-button')) {
-			return;
-		}
+	function insertHeaderSettingsButton(headerActions: HTMLElement) {
 		const notificationLink = getGlobalNotificationLink();
 		if (!notificationLink) {
-			return;
-		}
-		const headerActions = document.querySelector<HTMLElement>(
-			'[data-testid="top-bar-actions"]',
-		);
-		if (!headerActions) {
 			return;
 		}
 		const button = document.createElement('button');
@@ -661,19 +647,21 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		headerActions.append(button);
 	}
 
+	const headerSettingsController = createHeaderSettingsController<HTMLElement>({
+		getActionGroup: () => document.querySelector<HTMLElement>(
+			'[data-testid="top-bar-actions"]',
+		) ?? undefined,
+		hasButton: () => Boolean(
+			document.querySelector('.github-inbox-tuner-settings-button'),
+		),
+		insertButton: insertHeaderSettingsButton,
+		removeButton: () => {
+			document.querySelector('.github-inbox-tuner-settings-button')?.remove();
+		},
+	});
+
 	function scheduleHeaderSettingsButton() {
-		clearTimeout(headerSettingsRefresh);
-		if (!options.showHeaderSettingsButton) {
-			headerSettingsInsertionReady = true;
-			ensureHeaderSettingsButton();
-			return;
-		}
-		headerSettingsInsertionReady = false;
-		headerSettingsRefresh = setTimeout(() => {
-			headerSettingsRefresh = undefined;
-			headerSettingsInsertionReady = true;
-			ensureHeaderSettingsButton();
-		}, 1000);
+		headerSettingsController.setEnabled(options.showHeaderSettingsButton);
 	}
 
 	function setGlobalNotificationIndicator(hasFocusedNotifications) {
@@ -2809,13 +2797,8 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		const childListMutations = mutations.filter(
 			mutation => mutation.type === 'childList',
 		);
-		if (
-			options.showHeaderSettingsButton
-			&& headerSettingsInsertionReady
-			&& childListMutations.length > 0
-			&& !document.querySelector('.github-inbox-tuner-settings-button')
-		) {
-			ensureHeaderSettingsButton();
+		if (childListMutations.length > 0) {
+			headerSettingsController.handleMutation();
 		}
 		const onlyExtensionControlsChanged = childListMutations.length > 0
 			&& childListMutations.every(mutation => (
