@@ -131,7 +131,7 @@ export function createQueryListCollapsing({
 		const placeholders = document.createElement('span');
 		placeholders.className = 'github-inbox-tuner-collapse-placeholders';
 		placeholders.setAttribute('aria-hidden', 'true');
-		for (let index = 0; index < Math.min(group.length - 1, 5); index++) {
+		for (let index = 0; index < 2; index++) {
 			const placeholder = document.createElement('span');
 			placeholder.className = 'github-inbox-tuner-collapse-placeholder';
 			placeholders.append(placeholder);
