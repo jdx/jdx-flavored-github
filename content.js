@@ -1758,7 +1758,11 @@
 				/^(Open unread|Mark as done)$/i.test(element.textContent.trim())
 			));
 			const actionHost = nativeAction?.parentElement;
-			if (!actionHost || existing) {
+			if (!actionHost) {
+				continue;
+			}
+			actionHost.classList.add('github-inbox-tuner-repository-actions');
+			if (existing) {
 				continue;
 			}
 
@@ -2099,6 +2103,7 @@
 			if (!nativeAction || !actionHost) {
 				continue;
 			}
+			actionHost.classList.add('github-inbox-tuner-repository-actions');
 			const menu = createBulkActionsMenu(entries);
 			menu.classList.add('github-inbox-tuner-repository-bulk-actions');
 			existing?.replaceWith(menu);

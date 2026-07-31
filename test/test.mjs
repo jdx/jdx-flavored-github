@@ -233,6 +233,8 @@ assert.match(contentSource, /!className\.includes\('notificationIndicator'\)/);
 assert.match(contentCssSource, /\.github-inbox-tuner-settings-icon/);
 assert.match(contentSource, /list\.closest\('\.js-notifications-group'\)/);
 assert.match(contentSource, /updateRepositoryBulkActions/);
+assert.match(contentSource, /github-inbox-tuner-repository-actions/);
+assert.match(contentCssSource, /\.github-inbox-tuner-repository-actions/);
 assert.match(contentSource, /createBulkActionsMenu/);
 assert.match(contentSource, /openBulkActionPreview/);
 assert.match(contentSource, /executeNativeListStep/);

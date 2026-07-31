@@ -209,6 +209,30 @@
 	position: relative;
 }
 
+@media (min-width: 768px) {
+	.github-inbox-tuner-repository-actions {
+		align-items: center;
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: wrap;
+		gap: 4px;
+		justify-content: flex-end;
+		width: auto !important;
+	}
+
+	.github-inbox-tuner-repository-actions > .btn,
+	.github-inbox-tuner-repository-actions > .github-inbox-tuner-bulk-menu {
+		flex: 0 0 auto;
+		margin: 0 !important;
+		width: auto !important;
+	}
+
+	.github-inbox-tuner-repository-actions > .github-inbox-tuner-bulk-menu > summary {
+		box-sizing: border-box;
+		line-height: 26px;
+	}
+}
+
 .github-inbox-tuner-bulk-menu > summary {
 	background: var(--button-default-bgColor-rest, var(--color-btn-bg));
 	border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border));
