@@ -332,7 +332,7 @@ assert.match(
 	contentCssSource,
 	/\.github-inbox-tuner-collapse-toggle\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*width:\s*100%;/s,
 );
-assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder\s*\{[^}]*height:\s*8px;[^}]*width:\s*100%;/s);
+assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder\s*\{[^}]*border-bottom:\s*1px solid[^}]*height:\s*10px;[^}]*width:\s*100%;/s);
 assert.match(contentSource, /github-inbox-tuner-collapse-placeholders/);
 assert.match(contentSource, /github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentSource, /github-inbox-tuner-query-member--expanded/);

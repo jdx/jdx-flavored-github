@@ -70,7 +70,7 @@
 	grid-template-columns: minmax(0, 1fr);
 	margin: 0;
 	min-height: 0;
-	padding: 2px 12px;
+	padding: 0;
 	width: 100%;
 }
 
@@ -79,7 +79,7 @@
 }
 
 .github-inbox-tuner-collapse-toggle:hover {
-	background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
+	background: var(--bgColor-muted, var(--color-canvas-subtle));
 	text-decoration: none;
 }
 
@@ -148,18 +148,19 @@
 
 .github-inbox-tuner-collapse-placeholders {
 	display: grid;
-	gap: 2px;
+	gap: 0;
 	width: 100%;
 }
 
 .github-inbox-tuner-collapse-placeholder {
-	background: var(--bgColor-muted, var(--color-canvas-subtle));
-	border: 1px solid var(--borderColor-muted, var(--color-border-muted));
-	border-radius: 3px;
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));
+	border-radius: 0;
 	box-sizing: border-box;
 	display: block;
-	height: 8px;
-	opacity: 0.72;
+	height: 10px;
+	opacity: 1;
 	width: 100%;
 }
 
