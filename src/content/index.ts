@@ -270,7 +270,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 
 		updateViewBar('notifications');
 		updateFilteredDisclosures(rows);
-		updateRepositoryBulkActions(rows);
+		updateRepositoryBulkActions(allRows, rows);
 		updateRepositoryViewActions(rows);
 		scheduleFailedChecksRefresh();
 		scheduleNotificationStackRefresh();
@@ -598,8 +598,12 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			classifyNotification(row);
 		}
 
+		const currentFolderRows = filterNotificationRowsForFolder(
+			rows,
+			showsArchivedNotifications(),
+		);
 		updateViewBar('notifications');
-		updateFilteredDisclosures(rows);
+		updateFilteredDisclosures(currentFolderRows);
 	}
 
 	function scheduleFailedChecksRefresh() {
@@ -1724,8 +1728,14 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		};
 	}
 
-	function updateRepositoryBulkActions(rows) {
-		const lists = new Set([...rows].map(row => row.parentElement));
+	function updateRepositoryBulkActions(allRows, rows) {
+		const rowsByList = new Map();
+		for (const row of rows) {
+			const listRows = rowsByList.get(row.parentElement) ?? [];
+			listRows.push(row);
+			rowsByList.set(row.parentElement, listRows);
+		}
+		const lists = new Set([...allRows].map(row => row.parentElement));
 		for (const list of lists) {
 			const repository = getNotificationRepository(list);
 			const group = list.closest('.js-notifications-group')
@@ -1738,10 +1748,11 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			}
 			const existing = group.querySelector('.github-inbox-tuner-repository-bulk-actions');
 			const rules = getNotificationRules(repository);
+			const listRows = rowsByList.get(list) ?? [];
 			const entries = rules.flatMap(rule => (rule.actions ?? []).map(action => ({
 				action,
 				surface: 'notifications',
-				targets: [...list.querySelectorAll('.notifications-list-item')]
+				targets: listRows
 					.filter(row => matchesNotificationExpression(row, rule, rules))
 					.map(row => getBulkTarget(row, 'notifications'))
 					.filter(Boolean),
