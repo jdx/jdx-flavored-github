@@ -1,5 +1,16 @@
 # Repository Agent Guide
 
+## Contributing
+
+Follow [CONTRIBUTING.md](CONTRIBUTING.md) for the development and pull request
+workflow.
+
+Do not check the pull request template's manual Chrome verification box while
+authoring or updating a pull request. For bug fixes and features, that box must
+remain unchecked until the human contributor has built the extension, loaded
+`dist/` as an unpacked extension in Chrome, verified the change on GitHub, and
+personally clicked the checkbox in the GitHub pull request UI.
+
 ## Pull request titles
 
 All pull request titles must use Conventional Commits format:
