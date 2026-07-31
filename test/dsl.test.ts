@@ -347,7 +347,7 @@ assert.match(
 );
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder\s*\{[^}]*border-bottom:\s*1px solid[^}]*height:\s*10px;[^}]*width:\s*100%;/s);
 assert.match(contentSource, /github-inbox-tuner-collapse-placeholders/);
-assert.match(contentSource, /Math\.min\(group\.length, 5\)/);
+assert.match(contentSource, /Math\.min\(group\.length - 1, 5\)/);
 assert.match(contentSource, /github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentSource, /github-inbox-tuner-query-member--expanded/);
 assert.match(contentSource, /Collapse dependency updates by/);
