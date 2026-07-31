@@ -262,11 +262,10 @@ export function createQueryListCollapsing({
 		}
 	}
 
-	async function updateQueryListCollapses(surface: Surface) {
+	function decorateCachedQueryListCollapses(surface: Surface) {
 		if (!['pulls', 'issues'].includes(surface)) {
-			return;
+			return [];
 		}
-		const currentGeneration = ++generation;
 		clearQueryListDecorations();
 		const targets = getTargets(surface)
 			.filter(target => !target.row.closest('[aria-label*="pinned issues" i]'));
@@ -280,7 +279,7 @@ export function createQueryListCollapsing({
 		}
 		if (surface !== 'pulls') {
 			decorateQueryGroups(items, surface);
-			return;
+			return [];
 		}
 
 		const candidates = items.map(item => {
@@ -292,6 +291,18 @@ export function createQueryListCollapsing({
 			};
 		});
 		decorateQueryGroups(candidates, surface);
+		return candidates;
+	}
+
+	async function updateQueryListCollapses(surface: Surface) {
+		if (!['pulls', 'issues'].includes(surface)) {
+			return;
+		}
+		const currentGeneration = ++generation;
+		const candidates = decorateCachedQueryListCollapses(surface);
+		if (surface !== 'pulls') {
+			return;
+		}
 		const loadedItems = await loadMetadata(candidates);
 		if (currentGeneration !== generation) {
 			return;
@@ -308,6 +319,8 @@ export function createQueryListCollapsing({
 
 	function scheduleQueryListCollapseRefresh(surface: Surface) {
 		clearTimeout(refresh);
+		generation++;
+		decorateCachedQueryListCollapses(surface);
 		refresh = setTimeout(() => {
 			void updateQueryListCollapses(surface);
 		}, 250);

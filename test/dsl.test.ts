@@ -317,6 +317,8 @@ assert.match(contentSource, /github-inbox-tuner-query-member--collapsed/);
 assert.match(contentSource, /getQueryListItemAuthor/);
 assert.match(contentSource, /getCachedMetadata/);
 assert.match(contentSource, /loadMetadata/);
+assert.match(contentSource, /function decorateCachedQueryListCollapses\(surface: Surface\)/);
+assert.match(contentSource, /generation\+\+;\s*decorateCachedQueryListCollapses\(surface\);/s);
 assert.match(contentSource, /findStackComponents\(stackItems\)/);
 assert.match(contentSource, /orderStackItems\(component\)/);
 assert.match(contentSource, /more \$\{stack\.length === 2 \? 'PR' : 'PRs'\} in stack/);
