@@ -1159,11 +1159,21 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			decorateNotificationGroups(cachedItems);
 		}
 
-		for (const {candidates, list} of lists) {
-			const items = await loadPullRequestMetadata(candidates);
-			if (generation !== notificationStackGeneration) {
-				return;
-			}
+		const loadedItems = await loadPullRequestMetadata(
+			lists.flatMap(({candidates}) => candidates),
+		);
+		if (generation !== notificationStackGeneration) {
+			return;
+		}
+		const itemsByList = new Map();
+		for (const item of loadedItems) {
+			const listItems = itemsByList.get(item.row.parentElement) ?? [];
+			listItems.push(item);
+			itemsByList.set(item.row.parentElement, listItems);
+		}
+
+		for (const {list} of lists) {
+			const items = itemsByList.get(list) ?? [];
 			clearNotificationStackDecorations(list);
 			let exactStatusesChanged = false;
 			for (const item of items) {
