@@ -10,9 +10,15 @@
 	display: none !important;
 }
 
-.notifications-list-item.github-inbox-tuner-collapse-member--expanded,
-.github-inbox-tuner-query-member--expanded {
+.notifications-list-item.github-inbox-tuner-collapse-member--expanded {
 	border-left: 2px solid var(--borderColor-muted, var(--color-border-muted)) !important;
+	box-sizing: border-box;
+	margin-left: 16px !important;
+	width: calc(100% - 16px) !important;
+}
+
+.github-inbox-tuner-query-member--expanded {
+	border-left: 0 !important;
 	box-sizing: border-box;
 	margin-left: 16px !important;
 	width: calc(100% - 16px) !important;

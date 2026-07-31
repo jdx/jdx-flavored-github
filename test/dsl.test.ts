@@ -332,6 +332,10 @@ assert.match(contentSource, /notification-list-item-link'\)\?\.after\(chevron\)/
 assert.match(contentSource, /github-inbox-tuner-collapse-chevron/);
 assert.match(contentSource, /github-inbox-tuner-list-check-status/);
 assert.match(contentCssSource, /\.github-inbox-tuner-query-member--collapsed/);
+assert.match(
+	contentCssSource,
+	/\.github-inbox-tuner-query-member--expanded\s*\{[^}]*border-left:\s*0 !important;[^}]*margin-left:\s*16px !important;[^}]*width:\s*calc\(100% - 16px\) !important;/s,
+);
 assert.match(contentCssSource, /\.github-inbox-tuner-list-collapse-chevron\s*\{[^}]*position:\s*absolute;[^}]*right:\s*8px;[^}]*top:\s*8px;/s);
 assert.match(
 	contentCssSource,
