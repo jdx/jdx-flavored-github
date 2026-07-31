@@ -195,6 +195,12 @@
 			&& participants.every(link => link.getAttribute('href').startsWith('/apps/'));
 	}
 
+	function isTerminalPullRequestRow(row) {
+		return Boolean(row.querySelector(
+			':is(.octicon-git-pull-request-closed, .octicon-git-merge)',
+		));
+	}
+
 	function getNotificationFacts(row) {
 		const {reason, threadType} = getNotificationMetadata(row);
 		const titleElement = row.querySelector('.markdown-title');
@@ -220,17 +226,22 @@
 		} else if (itemLink?.hostname === 'gist.github.com') {
 			notificationType = 'gist';
 		}
+		const terminalPullRequest = isTerminalPullRequestRow(row);
 		const facts = {
 			author: row.dataset.githubInboxTunerAuthor,
 			bot: hasOnlyVisibleBotParticipants(row),
 			directMention: reason === 'mention',
 			done: row.classList.contains('notification-archived'),
 			draft: Boolean(row.querySelector('.octicon-git-pull-request-draft')),
-			failingChecks: row.dataset.githubInboxTunerFailingChecks === 'true',
-			checkStatus: row.dataset.githubInboxTunerCheckStatus,
+			failingChecks: !terminalPullRequest
+				&& row.dataset.githubInboxTunerFailingChecks === 'true',
+			checkStatus: terminalPullRequest
+				? ''
+				: row.dataset.githubInboxTunerCheckStatus,
 			issue: Boolean(row.querySelector(':is(.octicon-issue-opened, .octicon-issue-closed, .octicon-skip)')),
 			labels: JSON.parse(row.dataset.githubInboxTunerLabels ?? '[]'),
-			mergeConflict: row.dataset.githubInboxTunerMergeConflict === 'true',
+			mergeConflict: !terminalPullRequest
+				&& row.dataset.githubInboxTunerMergeConflict === 'true',
 			mergedPullRequest: Boolean(row.querySelector('.octicon-git-merge')),
 			ownPullRequest: row.dataset.githubInboxTunerOwnPullRequest === 'true',
 			pullRequest: Boolean(
@@ -623,10 +634,10 @@
 		}
 
 		const [failedNumbers, ownNumbers, pendingNumbers, passingNumbers] = await Promise.all([
-			fetchPullRequestNumbers(repository, 'is:pr status:failure'),
+			fetchPullRequestNumbers(repository, 'is:pr is:open status:failure'),
 			fetchPullRequestNumbers(repository, 'is:pr author:@me'),
-			fetchPullRequestNumbers(repository, 'is:pr status:pending'),
-			fetchPullRequestNumbers(repository, 'is:pr status:success'),
+			fetchPullRequestNumbers(repository, 'is:pr is:open status:pending'),
+			fetchPullRequestNumbers(repository, 'is:pr is:open status:success'),
 		]);
 		const latest = pullRequestChecksCache.get(repository) ?? cached;
 		const status = {
@@ -645,7 +656,9 @@
 
 	function setPullRequestFacts(row, reference, status) {
 		const exactStatus = status.exactStatuses?.get(reference.number);
-		const checkStatus = exactStatus
+		const checkStatus = isTerminalPullRequestRow(row)
+			? ''
+			: exactStatus
 			?? (status.failedNumbers.has(reference.number)
 			? 'failure'
 			: status.pendingNumbers.has(reference.number)
@@ -1210,6 +1223,14 @@
 		let value = response.ok
 			? parsePullRequestMetadata(await response.text(), reference)
 			: undefined;
+		if (value && ['CLOSED', 'MERGED'].includes(value.state)) {
+			value = {
+				...value,
+				checkStatus: undefined,
+				mergeConflict: undefined,
+				statusBatch: undefined,
+			};
+		}
 		if (value?.statusBatch?.url) {
 			const body = new FormData();
 			for (const [name, fieldValue] of value.statusBatch.fields) {
