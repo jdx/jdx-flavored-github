@@ -252,6 +252,9 @@ assert.match(contentSource, /event\.target\.closest\('\.github-inbox-tuner-setti
 assert.match(contentSource, /event\.stopPropagation\(\)/);
 assert.match(contentSource, /scheduleHeaderSettingsButton/);
 assert.match(contentSource, /if \(!options\.showHeaderSettingsButton\)/);
+assert.match(contentSource, /\[data-testid="top-bar-actions"\]/);
+assert.match(contentSource, /headerActions\.append\(button\)/);
+assert.doesNotMatch(contentSource, /notificationLink\.before\(button\)/);
 assert.match(optionsSource, /showHeaderSettingsButton: 'show-header-settings-button'/);
 assert.match(optionsHtmlSource, /id="show-header-settings-button"/);
 assert.match(contentSource, /chip\.hidden = count === 0 && chip\.dataset\.viewId !== activeViewId/);

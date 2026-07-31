@@ -53,6 +53,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	let globalIndicatorRefresh;
 	let globalIndicatorRefreshInFlight;
 	let globalIndicatorUpdatedAt = 0;
+	let headerSettingsInsertionReady = false;
 	let headerSettingsRefresh;
 	let notificationStackRefresh;
 	let notificationStackGeneration = 0;
@@ -607,6 +608,12 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		if (!notificationLink) {
 			return;
 		}
+		const headerActions = document.querySelector<HTMLElement>(
+			'[data-testid="top-bar-actions"]',
+		);
+		if (!headerActions) {
+			return;
+		}
 		const button = document.createElement('button');
 		button.type = 'button';
 		const nativeButtonClasses = [...notificationLink.classList].filter(
@@ -632,16 +639,25 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		mark.setAttribute('aria-hidden', 'true');
 		mark.textContent = 'jdx';
 		button.append(mark);
-		notificationLink.before(button);
+		// GitHub's search component expects the top-nav container to have a fixed
+		// set of direct children. Keep our control inside its existing action group
+		// so opening global search does not leave the expanded input at zero width.
+		headerActions.append(button);
 	}
 
 	function scheduleHeaderSettingsButton() {
-		ensureHeaderSettingsButton();
 		clearTimeout(headerSettingsRefresh);
+		if (!options.showHeaderSettingsButton) {
+			headerSettingsInsertionReady = true;
+			ensureHeaderSettingsButton();
+			return;
+		}
+		headerSettingsInsertionReady = false;
 		headerSettingsRefresh = setTimeout(() => {
 			headerSettingsRefresh = undefined;
+			headerSettingsInsertionReady = true;
 			ensureHeaderSettingsButton();
-		}, 750);
+		}, 1000);
 	}
 
 	function setGlobalNotificationIndicator(hasFocusedNotifications) {
@@ -2779,8 +2795,8 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		);
 		if (
 			options.showHeaderSettingsButton
-			&&
-			childListMutations.length > 0
+			&& headerSettingsInsertionReady
+			&& childListMutations.length > 0
 			&& !document.querySelector('.github-inbox-tuner-settings-button')
 		) {
 			ensureHeaderSettingsButton();
