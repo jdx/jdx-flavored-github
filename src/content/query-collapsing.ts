@@ -80,10 +80,12 @@ export function createQueryListCollapsing({
 		for (const row of document.querySelectorAll(
 			'.github-inbox-tuner-query-member--expanded',
 		)) {
-			row.classList.remove(
-				'github-inbox-tuner-query-member--expanded',
-				'github-inbox-tuner-query-member--last',
-			);
+			row.classList.remove('github-inbox-tuner-query-member--expanded');
+		}
+		for (const content of document.querySelectorAll(
+			'.github-inbox-tuner-stack-primary-content',
+		)) {
+			content.classList.remove('github-inbox-tuner-stack-primary-content');
 		}
 		for (const row of document.querySelectorAll(
 			'.github-inbox-tuner-collapse-representative--expanded',
@@ -167,10 +169,6 @@ export function createQueryListCollapsing({
 					'github-inbox-tuner-query-member--expanded',
 					row !== representative.row && expanded,
 				);
-				row.classList.toggle(
-					'github-inbox-tuner-query-member--last',
-					row === group.at(-1)?.row && row !== representative.row && expanded,
-				);
 			}
 		};
 		const toggleExpanded = (event: Event) => {
@@ -194,12 +192,8 @@ export function createQueryListCollapsing({
 		));
 		const primaryContent = title?.closest('.flex-auto.min-width-0')
 			?? title?.parentElement;
-		const actionArea = primaryContent?.nextElementSibling;
-		if (actionArea?.classList.contains('flex-shrink-0')) {
-			actionArea.append(chevron);
-		} else {
-			primaryContent?.after(chevron);
-		}
+		primaryContent?.classList.add('github-inbox-tuner-stack-primary-content');
+		primaryContent?.append(chevron);
 		representative.row.after(button);
 	}
 
