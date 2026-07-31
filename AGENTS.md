@@ -27,3 +27,14 @@ Examples:
 - `refactor(dsl): split parsing from evaluation`
 - `docs: explain Refined GitHub compatibility`
 - `feat(options)!: replace the exported settings schema`
+
+## AI attribution
+
+AI-assisted pull request descriptions, reviews, and comments must end with:
+
+```text
+*AI-assisted — Tool: <tool>; model: <provider>/<model>; version: <version-or-unavailable>.*
+```
+
+Use the exact model and version identifiers exposed by the runtime. Never infer
+or guess them; use `unavailable` when either identifier is not exposed.
