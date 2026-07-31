@@ -65,8 +65,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	const expandedNotificationStacks = new Set<string>();
 	const {scheduleQueryListCollapseRefresh} = createQueryListCollapsing({
 		expandedGroups: expandedNotificationStacks,
+		getCachedMetadata: reference => getCachedPullRequestGroupingMetadata(reference),
 		getOptions: () => options,
 		getTargets: surface => getListBulkTargets(surface),
+		loadMetadata: candidates => loadPullRequestMetadata(candidates),
 	});
 	const pullRequestChecksStorageKey = 'pullRequestChecksCache';
 	const pullRequestLabelsStorageKey = 'pullRequestLabelsCache';

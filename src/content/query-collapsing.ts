@@ -1,5 +1,9 @@
 import type {ExtensionOptions, Surface} from '../shared/types.js';
-import {isDependencyUpdateAuthor} from './grouping.js';
+import {findStackComponents, isDependencyUpdateAuthor} from './grouping.js';
+import type {
+	PullRequestMetadata,
+	PullRequestReference,
+} from './pull-request-metadata.js';
 
 interface QueryTarget {
 	number: number;
@@ -7,10 +11,23 @@ interface QueryTarget {
 	row: HTMLElement;
 }
 
+type QueryItem = QueryTarget & {
+	author?: string;
+	metadata?: PullRequestMetadata;
+	reference?: PullRequestReference;
+};
+
 interface QueryCollapsingDependencies {
 	expandedGroups: Set<string>;
+	getCachedMetadata: (reference: PullRequestReference) => PullRequestMetadata | undefined;
 	getOptions: () => ExtensionOptions;
 	getTargets: (surface: Surface) => QueryTarget[];
+	loadMetadata: (
+		candidates: Array<QueryTarget & {reference: PullRequestReference}>,
+	) => Promise<Array<QueryTarget & {
+		metadata: PullRequestMetadata;
+		reference: PullRequestReference;
+	}>>;
 }
 
 export function getQueryListItemAuthor(row: Element): string | undefined {
@@ -32,21 +49,45 @@ export function getQueryListItemAuthor(row: Element): string | undefined {
 
 export function createQueryListCollapsing({
 	expandedGroups,
+	getCachedMetadata,
 	getOptions,
 	getTargets,
+	loadMetadata,
 }: QueryCollapsingDependencies) {
+	let generation = 0;
 	let refresh: ReturnType<typeof setTimeout> | undefined;
 
+	function clearQueryListDecorations() {
+		for (const toggle of document.querySelectorAll(
+			'.github-inbox-tuner-list-collapse-toggle',
+		)) {
+			toggle.remove();
+		}
+		for (const row of document.querySelectorAll(
+			'.github-inbox-tuner-query-member--collapsed',
+		)) {
+			row.classList.remove('github-inbox-tuner-query-member--collapsed');
+		}
+		for (const row of document.querySelectorAll(
+			'.github-inbox-tuner-query-member--expanded',
+		)) {
+			row.classList.remove('github-inbox-tuner-query-member--expanded');
+		}
+		for (const row of document.querySelectorAll(
+			'.github-inbox-tuner-collapse-representative--expanded',
+		)) {
+			row.classList.remove('github-inbox-tuner-collapse-representative--expanded');
+		}
+	}
+
 	function decorateQueryCollapsedGroup(
-		group: Array<QueryTarget & {author: string}>,
+		group: QueryItem[],
 		surface: Surface,
-		author: string,
+		signature: string,
+		collapsedLabel: string,
+		expandedLabel: string,
+		representative = group[0],
 	) {
-		const representative = group[0];
-		const signature = `${location.pathname}:${surface}:author:${author.toLowerCase()}:${group
-			.map(item => `${item.repository}#${item.number}`)
-			.sort()
-			.join(',')}`;
 		const button = document.createElement('button');
 		button.className = 'github-inbox-tuner-collapse-toggle github-inbox-tuner-list-collapse-toggle';
 		button.type = 'button';
@@ -61,14 +102,7 @@ export function createQueryListCollapsing({
 			placeholders.append(placeholder);
 		}
 		const text = document.createElement('span');
-		const itemLabel = surface === 'pulls' ? 'PRs' : 'issues';
-		text.textContent = isDependencyUpdateAuthor(author)
-			? `${group.length - 1} more dependency ${group.length === 2 ? 'update' : 'updates'}`
-			: `${group.length - 1} more ${group.length === 2 ? itemLabel.slice(0, -1) : itemLabel} by ${author}`;
-		const collapsedLabel = text.textContent;
-		const expandedLabel = isDependencyUpdateAuthor(author)
-			? `Collapse dependency updates by ${author}`
-			: `Collapse ${itemLabel} by ${author}`;
+		text.textContent = collapsedLabel;
 		button.append(icon, placeholders, text);
 
 		const updateExpandedState = (expanded: boolean) => {
@@ -80,7 +114,7 @@ export function createQueryListCollapsing({
 			text.textContent = expanded ? expandedLabel : collapsedLabel;
 			button.title = expanded
 				? expandedLabel
-				: `Expand ${group.length} ${itemLabel}`;
+				: `Expand ${group.length} related ${surface === 'pulls' ? 'pull requests' : 'issues'}`;
 			for (const {row} of group) {
 				row.classList.toggle(
 					'github-inbox-tuner-query-member--collapsed',
@@ -110,32 +144,42 @@ export function createQueryListCollapsing({
 		title?.after(button);
 	}
 
-	function updateQueryListCollapses(surface: Surface) {
-		if (!['pulls', 'issues'].includes(surface)) {
-			return;
+	function decorateQueryGroups(items: QueryItem[], surface: Surface) {
+		const groupedRows = new Set<HTMLElement>();
+		if (surface === 'pulls') {
+			const stackItems = items.filter(
+				(item): item is QueryItem & {metadata: PullRequestMetadata} => Boolean(item.metadata),
+			);
+			for (const stack of findStackComponents(stackItems)) {
+				for (const item of stack) {
+					groupedRows.add(item.row);
+				}
+				const baseKeys = new Set(stack.map(item => item.metadata.baseKey));
+				const representative = stack.find(
+					item => !baseKeys.has(item.metadata.headKey),
+				) ?? stack[0];
+				const signature = `${location.pathname}:pulls:stack:${stack[0].repository}:${stack
+					.map(item => item.number)
+					.sort((left, right) => left - right)
+					.join(',')}`;
+				decorateQueryCollapsedGroup(
+					stack,
+					surface,
+					signature,
+					`${stack.length - 1} more ${stack.length === 2 ? 'PR' : 'PRs'} in stack`,
+					`Collapse ${stack.length}-PR stack`,
+					representative,
+				);
+			}
 		}
-		for (const toggle of document.querySelectorAll(
-			'.github-inbox-tuner-list-collapse-toggle',
-		)) {
-			toggle.remove();
-		}
-		for (const row of document.querySelectorAll(
-			'.github-inbox-tuner-query-member--collapsed',
-		)) {
-			row.classList.remove('github-inbox-tuner-query-member--collapsed');
-		}
-		for (const row of document.querySelectorAll(
-			'.github-inbox-tuner-query-member--expanded',
-		)) {
-			row.classList.remove('github-inbox-tuner-query-member--expanded');
-		}
+
 		const options = getOptions();
-		const groups = new Map<string, Array<QueryTarget & {author: string}>>();
-		for (const target of getTargets(surface)) {
-			if (target.row.closest('[aria-label*="pinned issues" i]')) {
+		const authorGroups = new Map<string, QueryItem[]>();
+		for (const item of items) {
+			if (groupedRows.has(item.row)) {
 				continue;
 			}
-			const author = getQueryListItemAuthor(target.row);
+			const author = item.author ?? item.metadata?.author;
 			if (
 				!author
 				|| (
@@ -146,20 +190,79 @@ export function createQueryListCollapsing({
 				continue;
 			}
 			const key = author.toLowerCase();
-			const group = groups.get(key) ?? [];
-			group.push({...target, author});
-			groups.set(key, group);
+			const group = authorGroups.get(key) ?? [];
+			group.push({...item, author});
+			authorGroups.set(key, group);
 		}
-		for (const group of groups.values()) {
-			if (group.length > 1) {
-				decorateQueryCollapsedGroup(group, surface, group[0].author);
+		for (const group of authorGroups.values()) {
+			if (group.length < 2) {
+				continue;
 			}
+			const author = group[0].author;
+			const itemLabel = surface === 'pulls' ? 'PRs' : 'issues';
+			const signature = `${location.pathname}:${surface}:author:${author.toLowerCase()}:${group
+				.map(item => `${item.repository}#${item.number}`)
+				.sort()
+				.join(',')}`;
+			decorateQueryCollapsedGroup(
+				group,
+				surface,
+				signature,
+				isDependencyUpdateAuthor(author)
+					? `${group.length - 1} more dependency ${group.length === 2 ? 'update' : 'updates'}`
+					: `${group.length - 1} more ${group.length === 2 ? itemLabel.slice(0, -1) : itemLabel} by ${author}`,
+				isDependencyUpdateAuthor(author)
+					? `Collapse dependency updates by ${author}`
+					: `Collapse ${itemLabel} by ${author}`,
+			);
 		}
+	}
+
+	async function updateQueryListCollapses(surface: Surface) {
+		if (!['pulls', 'issues'].includes(surface)) {
+			return;
+		}
+		const currentGeneration = ++generation;
+		clearQueryListDecorations();
+		const targets = getTargets(surface)
+			.filter(target => !target.row.closest('[aria-label*="pinned issues" i]'));
+		const items = targets.map(target => ({
+			...target,
+			author: getQueryListItemAuthor(target.row),
+		}));
+		if (surface !== 'pulls') {
+			decorateQueryGroups(items, surface);
+			return;
+		}
+
+		const candidates = items.map(item => {
+			const reference = {number: item.number, repository: item.repository};
+			return {
+				...item,
+				metadata: getCachedMetadata(reference),
+				reference,
+			};
+		});
+		decorateQueryGroups(candidates, surface);
+		const loadedItems = await loadMetadata(candidates);
+		if (currentGeneration !== generation) {
+			return;
+		}
+		clearQueryListDecorations();
+		decorateQueryGroups(
+			loadedItems.map(item => ({
+				...item,
+				author: getQueryListItemAuthor(item.row) ?? item.metadata.author,
+			})),
+			surface,
+		);
 	}
 
 	function scheduleQueryListCollapseRefresh(surface: Surface) {
 		clearTimeout(refresh);
-		refresh = setTimeout(() => updateQueryListCollapses(surface), 250);
+		refresh = setTimeout(() => {
+			void updateQueryListCollapses(surface);
+		}, 250);
 	}
 
 	return {scheduleQueryListCollapseRefresh, updateQueryListCollapses};
