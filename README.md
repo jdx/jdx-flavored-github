@@ -147,12 +147,15 @@ Run the test suite:
 aube test
 ```
 
-Before packaging:
+## Releases
 
-1. Run `aube test`.
-2. Test Notifications, Pull Requests, and Issues with `dist` loaded unpacked.
-3. Verify the version in `manifest.json`.
-4. Create a ZIP from `dist` with `manifest.json` at its root.
+Merges to `main` update a release pull request from Conventional Commit titles.
+That pull request updates the changelog and `manifest.json` version. Merging it
+creates a GitHub release, runs the full test suite, and attaches a Chrome-ready
+ZIP with `manifest.json` at its root.
+
+If packaging fails, rerunning the workflow resumes the latest draft release.
+The workflow can also be dispatched manually with a specific draft tag.
 
 This project has not yet had a public release. Change schemas and built-in
 defaults directly until it does.
