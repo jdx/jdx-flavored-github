@@ -325,6 +325,7 @@ assert.match(contentSource, /event\.stopPropagation\(\)/);
 assert.match(contentSource, /representative\.row\.after\(button\)/);
 assert.match(contentSource, /title\?\.before\(chevron\)/);
 assert.match(contentSource, /notification-list-item-link/);
+assert.match(contentSource, /notification-list-item-link'\)\?\.after\(chevron\)/);
 assert.match(contentSource, /github-inbox-tuner-collapse-chevron/);
 assert.match(contentSource, /github-inbox-tuner-list-check-status/);
 assert.match(contentCssSource, /\.github-inbox-tuner-query-member--collapsed/);

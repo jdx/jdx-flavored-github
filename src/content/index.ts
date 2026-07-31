@@ -1058,7 +1058,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		button.addEventListener('click', toggleExpanded);
 		chevron.addEventListener('click', toggleExpanded);
 		updateExpandedState(expandedNotificationStacks.has(signature));
-		representative.row.querySelector('.notification-list-item-link')?.before(chevron);
+		representative.row.querySelector('.notification-list-item-link')?.after(chevron);
 		representative.row.after(button);
 	}
 
