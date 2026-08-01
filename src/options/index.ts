@@ -10,10 +10,17 @@ import type {NotificationRule, Surface} from '../shared/types.js';
 	const scopeHelp = document.querySelector<HTMLElement>('#scope-help')!;
 	const removeScopeButton = document.querySelector<HTMLButtonElement>('#remove-scope')!;
 	const checkboxIds = {
+		autoLoadNotificationPages: 'auto-load-notification-pages',
 		collapseDependencyUpdates: 'collapse-dependency-updates',
 		collapseSameAuthorNotifications: 'collapse-same-author-notifications',
 		dimBotNotifications: 'dim-bot-notifications',
 		showHeaderSettingsButton: 'show-header-settings-button',
+	};
+	const numberIds = {
+		autoLoadNotificationTarget: 'auto-load-notification-target',
+	};
+	const numberLimits = {
+		autoLoadNotificationTarget: {max: 200, min: 1},
 	};
 	const selectedBySurface = {};
 	let builtInNotificationRules = dsl.cloneBuiltInNotificationRules();
@@ -668,6 +675,17 @@ import type {NotificationRule, Surface} from '../shared/types.js';
 				throw new Error(`${key} must be true or false`);
 			}
 		}
+		for (const key of Object.keys(numberIds)) {
+			const {max, min} = numberLimits[key];
+			if (
+				typeof normalized[key] !== 'number'
+				|| !Number.isInteger(normalized[key])
+				|| normalized[key] < min
+				|| normalized[key] > max
+			) {
+				throw new Error(`${key} must be a whole number between ${min} and ${max}`);
+			}
+		}
 		if (!isObject(normalized.viewOverrides)) {
 			throw new Error('viewOverrides must be an object');
 		}
@@ -753,6 +771,15 @@ import type {NotificationRule, Surface} from '../shared/types.js';
 		for (const [key, id] of Object.entries(checkboxIds)) {
 			updatedOptions[key] = document.querySelector<HTMLInputElement>(`#${id}`)!.checked;
 		}
+		for (const [key, id] of Object.entries(numberIds)) {
+			const {max, min} = numberLimits[key];
+			const value = Math.round(
+				Number(document.querySelector<HTMLInputElement>(`#${id}`)!.value),
+			);
+			updatedOptions[key] = Number.isFinite(value)
+				? Math.min(max, Math.max(min, value))
+				: defaults[key];
+		}
 		return updatedOptions;
 	}
 
@@ -784,6 +811,11 @@ import type {NotificationRule, Surface} from '../shared/types.js';
 		}
 		for (const [key, id] of Object.entries(checkboxIds)) {
 			document.querySelector<HTMLInputElement>(`#${id}`)!.checked = state[key];
+		}
+		for (const [key, id] of Object.entries(numberIds)) {
+			document.querySelector<HTMLInputElement>(`#${id}`)!.value = String(
+				state[key] ?? defaults[key],
+			);
 		}
 		renderEditors();
 	}

@@ -44,6 +44,18 @@
 	display: none !important;
 }
 
+a[aria-label="Next"].github-inbox-tuner-hidden {
+	display: none !important;
+}
+
+.github-inbox-tuner-loading-more {
+	box-sizing: border-box;
+	color: var(--fgColor-muted, var(--color-fg-muted));
+	font-size: 12px;
+	padding: 8px clamp(8px, 2vw, 16px);
+	width: 100%;
+}
+
 .github-inbox-tuner-settings-button {
 	flex: 0 0 auto;
 }

@@ -29,6 +29,17 @@ You can customize what "focused" means for you but by default it's:
 
 For me, this fits my workflow because PR notifications that someone else needs to finish I simply won't see until it's ready.
 
+## Extra inbox pages
+
+GitHub paginates the inbox before any view filters it, so a page of mostly
+draft and bot activity can leave Focused nearly empty. The extension keeps
+loading the next inbox page—using GitHub’s own pagination and your existing
+session—until the active view has enough notifications, then rewires the
+**Next** link to continue past everything it appended.
+
+Both the behavior and the target count are in Options under **Inbox pages**;
+loading is capped at five extra pages per visit.
+
 ## Pull Requests / Issues
 
 You can default the pull request and issue list pages on repos to different filters. Pull requests default to Ready, which shows open, non-draft PRs. Issues default to All.

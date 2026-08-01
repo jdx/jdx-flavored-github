@@ -380,6 +380,17 @@ textarea {
 	margin-top: 3px;
 }
 
+.number {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+	padding: 6px 0;
+}
+
+.number input {
+	width: 80px;
+}
+
 .field {
 	margin-top: 16px;
 	max-width: 560px;

@@ -36,6 +36,12 @@ import type {
 	PullRequestMetadata,
 	PullRequestReference,
 } from './pull-request-metadata.js';
+import {
+	appendNotificationRows,
+	getUsableNextPageHref,
+	hiddenClassName,
+	shouldLoadExtraNotificationPage,
+} from './notification-pagination.js';
 import {createQueryListCollapsing} from './query-collapsing.js';
 import {createHeaderSettingsController} from './header-settings.js';
 import {updateRevealedIndicator, updateStatusBadges} from './status.js';
@@ -60,6 +66,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	let builtInNotificationRules;
 	let builtInViews;
 	const defaults = defaultOptions;
+	const maxExtraNotificationPages = 5;
 	builtInNotificationRules = dsl.cloneBuiltInNotificationRules();
 	builtInViews = dsl.cloneBuiltInViews();
 
@@ -68,6 +75,12 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	let activeNotificationView;
 	let notificationViewExplicitlySelected = false;
 	let revealedFilterReasonsByList = new WeakMap();
+	let extraNotificationPagesAnchor;
+	let extraNotificationPagesKey;
+	let extraNotificationPagesLoaded = 0;
+	let extraNotificationPagesNextUrl;
+	let extraNotificationPagesRefresh;
+	let extraNotificationPagesRefreshInFlight;
 	let failedChecksRefresh;
 	let globalIndicatorRefresh;
 	let globalIndicatorRefreshInFlight;
@@ -276,6 +289,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		scheduleFailedChecksRefresh();
 		scheduleNotificationStackRefresh();
 		scheduleRecentNotificationsAlertRefresh();
+		scheduleExtraNotificationPages();
 	}
 
 	function scheduleNotificationViewRefresh(delay = 100) {
@@ -729,6 +743,160 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			next: nextHref ? new URL(nextHref, location.origin).href : undefined,
 			rows,
 		};
+	}
+
+	function getNotificationNextPageLink() {
+		return document.querySelector<HTMLAnchorElement>('a[aria-label="Next"]');
+	}
+
+	// The rendered Next link is the source of truth for where the inbox
+	// continues, so GitHub rendering a fresh one resumes loading on its own. The
+	// cached URL only covers a page that renders no pagination to read back.
+	function getNextNotificationPageUrl() {
+		if (extraNotificationPagesNextUrl) {
+			return extraNotificationPagesNextUrl;
+		}
+
+		const href = getUsableNextPageHref(getNotificationNextPageLink());
+		return href ? new URL(href, location.origin).href : undefined;
+	}
+
+	// The appended pages are already on screen, so GitHub's own Next link has to
+	// skip past them instead of repeating what the user is looking at.
+	function setNextNotificationPageUrl(url) {
+		extraNotificationPagesNextUrl = url;
+		const link = getNotificationNextPageLink();
+		if (!link) {
+			return;
+		}
+		link.classList.toggle(hiddenClassName, !url);
+		if (url) {
+			const next = new URL(url);
+			link.setAttribute('href', `${next.pathname}${next.search}`);
+		}
+	}
+
+	function countVisibleNotifications() {
+		const rows = filterNotificationRowsForFolder(
+			document.querySelectorAll<HTMLElement>('.notifications-list-item'),
+			showsArchivedNotifications(),
+		);
+		return rows.filter(
+			row => matchesNotificationView(row, getActiveNotificationViewId(row)),
+		).length;
+	}
+
+	function updateExtraNotificationPagesIndicator(loading) {
+		const existing = document.querySelector('.github-inbox-tuner-loading-more');
+		if (!loading) {
+			existing?.remove();
+			return;
+		}
+		if (existing) {
+			return;
+		}
+
+		const rows = document.querySelectorAll('.notifications-list-item');
+		const lastRow = rows[rows.length - 1];
+		const anchor = lastRow?.closest('.js-notifications-group')
+			?? lastRow?.parentElement;
+		if (!anchor) {
+			return;
+		}
+		const indicator = document.createElement('div');
+		indicator.className = 'github-inbox-tuner-loading-more';
+		indicator.textContent = 'Loading more notifications…';
+		anchor.after(indicator);
+	}
+
+	// Leaving the inbox and coming back re-renders a fresh first page under the
+	// same URL, so a spent page budget would stop auto-loading for a list that no
+	// longer holds anything this run appended. Anchor the budget to a row that
+	// only survives while the rendered list does.
+	function resetExtraNotificationPages() {
+		if (
+			extraNotificationPagesKey === location.href
+			&& extraNotificationPagesAnchor?.isConnected
+		) {
+			return;
+		}
+		extraNotificationPagesKey = location.href;
+		extraNotificationPagesAnchor = document.querySelector('.notifications-list-item');
+		extraNotificationPagesLoaded = 0;
+		extraNotificationPagesNextUrl = undefined;
+	}
+
+	async function loadExtraNotificationPages() {
+		if (extraNotificationPagesRefreshInFlight) {
+			return extraNotificationPagesRefreshInFlight;
+		}
+
+		extraNotificationPagesRefreshInFlight = (async () => {
+			resetExtraNotificationPages();
+			const pageKey = extraNotificationPagesKey;
+			let appendedAny = false;
+			try {
+				while (shouldLoadExtraNotificationPage({
+					enabled: isNotificationsPage()
+						&& options.autoLoadNotificationPages
+						&& location.href === pageKey,
+					hasNextPage: Boolean(getNextNotificationPageUrl()),
+					loadedPages: extraNotificationPagesLoaded,
+					maxPages: maxExtraNotificationPages,
+					target: options.autoLoadNotificationTarget,
+					visibleCount: countVisibleNotifications(),
+				})) {
+					const url = getNextNotificationPageUrl();
+					updateExtraNotificationPagesIndicator(true);
+					// An offline or blocked fetch rejects instead of returning a
+					// failed response, and it stops auto-loading either way.
+					const result = await loadNotificationPage(url).catch(
+						() => ({failed: true, next: undefined, rows: []}),
+					);
+					updateExtraNotificationPagesIndicator(false);
+					if (location.href !== pageKey) {
+						return;
+					}
+					// A failed page is a spent request, not the end of the inbox, so
+					// it costs budget and a later pass can retry it.
+					extraNotificationPagesLoaded++;
+					if (result.failed) {
+						break;
+					}
+					const appended = appendNotificationRows(document, result.rows);
+					setNextNotificationPageUrl(result.next);
+					for (const row of appended) {
+						applyCachedPullRequestFacts(row);
+						applyCachedPullRequestLabelFacts(row);
+						classifyNotification(row);
+					}
+					appendedAny ||= appended.length > 0;
+				}
+			} finally {
+				updateExtraNotificationPagesIndicator(false);
+			}
+			if (appendedAny) {
+				updateNotificationVisibility();
+			}
+		})().finally(() => {
+			extraNotificationPagesRefreshInFlight = undefined;
+		});
+		return extraNotificationPagesRefreshInFlight;
+	}
+
+	function scheduleExtraNotificationPages() {
+		if (
+			!isNotificationsPage()
+			|| !options.autoLoadNotificationPages
+			|| extraNotificationPagesRefreshInFlight
+		) {
+			return;
+		}
+		clearTimeout(extraNotificationPagesRefresh);
+		extraNotificationPagesRefresh = setTimeout(() => {
+			extraNotificationPagesRefresh = undefined;
+			void loadExtraNotificationPages();
+		}, 250);
 	}
 
 	async function refreshGlobalNotificationIndicator() {
@@ -2832,6 +3000,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				!(node instanceof Element)
 					|| node.classList.contains('github-inbox-tuner-collapse-toggle')
 					|| node.classList.contains('github-inbox-tuner-collapse-chevron')
+					|| node.classList.contains('github-inbox-tuner-loading-more')
 					|| node.classList.contains('github-inbox-tuner-view-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-repository-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-bulk-dialog')
