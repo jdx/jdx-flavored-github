@@ -31,6 +31,7 @@ import {
   shouldLoadExtraNotificationPage,
 } from './notification-pagination.js';
 import {createQueryListCollapsing} from './query-collapsing.js';
+import {createExpandedStackStore, expandedStacksStorageKey} from './stack-expansion.js';
 import {createHeaderSettingsController} from './header-settings.js';
 import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 
@@ -86,7 +87,16 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
   const pullRequestMetadataCache = new Map();
   const queryCountCache = new Map();
   const notificationDslCache = new Map();
-  const expandedNotificationStacks = new Set<string>();
+  let expandedStacksWrite = Promise.resolve();
+  const expandedNotificationStacks = createExpandedStackStore({
+    // Writes are chained so a burst of toggles cannot settle out of order and
+    // leave storage holding an older snapshot than the one already on screen.
+    persist: (stored) => {
+      expandedStacksWrite = expandedStacksWrite
+        .catch(() => {})
+        .then(() => chrome.storage.local.set({[expandedStacksStorageKey]: stored}));
+    },
+  });
   const {scheduleQueryListCollapseRefresh} = createQueryListCollapsing({
     expandedGroups: expandedNotificationStacks,
     getCachedMetadata: (reference) => getCachedPullRequestGroupingMetadata(reference),
@@ -497,6 +507,11 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
         value: entry.value,
       });
     }
+  }
+
+  async function hydrateExpandedStacks() {
+    const stored = await chrome.storage.local.get(expandedStacksStorageKey);
+    expandedNotificationStacks.hydrate(stored[expandedStacksStorageKey]);
   }
 
   async function persistPullRequestChecksCache() {
@@ -2939,6 +2954,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 
   async function loadOptions() {
     const cacheHydration = Promise.all([
+      hydrateExpandedStacks(),
       hydratePullRequestChecksCache(),
       hydratePullRequestLabelsCache(),
       hydratePullRequestMetadataCache(),
@@ -2949,10 +2965,12 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
     builtInViews = dsl.cloneBuiltInViews();
     activeNotificationView = getDefaultViewId('notifications');
     notificationViewExplicitlySelected = false;
-    optionsLoaded = true;
     const surface = getSurface();
     const redirecting = surface ? redirectToDefaultView(surface) : false;
+    // Stored expansion state has to land before the first decoration pass, or
+    // groups paint collapsed and snap open once hydration catches up.
     await cacheHydration;
+    optionsLoaded = true;
     if (!redirecting) {
       apply();
     }

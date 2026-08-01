@@ -50,6 +50,9 @@ By default, stacked PRs and dependabot/renovate PRs will collapse like this on N
 
 <img width="928" height="217" alt="Screenshot 2026-07-31 at 09 36 16" src="https://github.com/user-attachments/assets/17f19943-e126-4396-82d0-cc33f4387cef" />
 
+Groups you expand stay expanded after a refresh. That memory is stored locally,
+holds the 300 most recently expanded groups, and forgets a group after 30 days.
+
 ## Views/Rules
 
 jdx Flavored Markdown has 2 important concepts:
