@@ -35,6 +35,10 @@ import type {
 	PullRequestMetadata,
 	PullRequestReference,
 } from './pull-request-metadata.js';
+import {
+	appendNotificationRows,
+	shouldLoadExtraNotificationPage,
+} from './notification-pagination.js';
 import {createQueryListCollapsing} from './query-collapsing.js';
 import {createHeaderSettingsController} from './header-settings.js';
 import {updateRevealedIndicator, updateStatusBadges} from './status.js';
@@ -59,6 +63,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	let builtInNotificationRules;
 	let builtInViews;
 	const defaults = defaultOptions;
+	const maxExtraNotificationPages = 5;
 	builtInNotificationRules = dsl.cloneBuiltInNotificationRules();
 	builtInViews = dsl.cloneBuiltInViews();
 
@@ -67,6 +72,12 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	let activeNotificationView;
 	let notificationViewExplicitlySelected = false;
 	let revealedFilterReasonsByList = new WeakMap();
+	let extraNotificationPagesExhausted = false;
+	let extraNotificationPagesKey;
+	let extraNotificationPagesLoaded = 0;
+	let extraNotificationPagesNextUrl;
+	let extraNotificationPagesRefresh;
+	let extraNotificationPagesRefreshInFlight;
 	let failedChecksRefresh;
 	let globalIndicatorRefresh;
 	let globalIndicatorRefreshInFlight;
@@ -275,6 +286,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		scheduleFailedChecksRefresh();
 		scheduleNotificationStackRefresh();
 		scheduleRecentNotificationsAlertRefresh();
+		scheduleExtraNotificationPages();
 	}
 
 	function scheduleNotificationViewRefresh(delay = 100) {
@@ -728,6 +740,147 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			next: nextHref ? new URL(nextHref, location.origin).href : undefined,
 			rows,
 		};
+	}
+
+	function getNotificationNextPageLink() {
+		return document.querySelector<HTMLAnchorElement>('a[aria-label="Next"]');
+	}
+
+	function getNextNotificationPageUrl() {
+		if (extraNotificationPagesExhausted) {
+			return undefined;
+		}
+		if (extraNotificationPagesNextUrl) {
+			return extraNotificationPagesNextUrl;
+		}
+
+		const href = getNotificationNextPageLink()?.getAttribute('href');
+		return href ? new URL(href, location.origin).href : undefined;
+	}
+
+	// The appended pages are already on screen, so GitHub's own Next link has to
+	// skip past them instead of repeating what the user is looking at.
+	function setNextNotificationPageUrl(url) {
+		extraNotificationPagesNextUrl = url;
+		extraNotificationPagesExhausted = !url;
+		const link = getNotificationNextPageLink();
+		if (!link) {
+			return;
+		}
+		if (url) {
+			const next = new URL(url);
+			link.setAttribute('href', `${next.pathname}${next.search}`);
+		} else {
+			link.classList.add('github-inbox-tuner-hidden');
+		}
+	}
+
+	function countVisibleNotifications() {
+		const rows = filterNotificationRowsForFolder(
+			document.querySelectorAll<HTMLElement>('.notifications-list-item'),
+			showsArchivedNotifications(),
+		);
+		return rows.filter(
+			row => matchesNotificationView(row, getActiveNotificationViewId(row)),
+		).length;
+	}
+
+	function updateExtraNotificationPagesIndicator(loading) {
+		const existing = document.querySelector('.github-inbox-tuner-loading-more');
+		if (!loading) {
+			existing?.remove();
+			return;
+		}
+		if (existing) {
+			return;
+		}
+
+		const rows = document.querySelectorAll('.notifications-list-item');
+		const lastRow = rows[rows.length - 1];
+		const anchor = lastRow?.closest('.js-notifications-group')
+			?? lastRow?.parentElement;
+		if (!anchor) {
+			return;
+		}
+		const indicator = document.createElement('div');
+		indicator.className = 'github-inbox-tuner-loading-more';
+		indicator.textContent = 'Loading more notifications…';
+		anchor.after(indicator);
+	}
+
+	function resetExtraNotificationPages() {
+		if (extraNotificationPagesKey === location.href) {
+			return;
+		}
+		extraNotificationPagesKey = location.href;
+		extraNotificationPagesExhausted = false;
+		extraNotificationPagesLoaded = 0;
+		extraNotificationPagesNextUrl = undefined;
+	}
+
+	async function loadExtraNotificationPages() {
+		if (extraNotificationPagesRefreshInFlight) {
+			return extraNotificationPagesRefreshInFlight;
+		}
+
+		extraNotificationPagesRefreshInFlight = (async () => {
+			resetExtraNotificationPages();
+			const pageKey = extraNotificationPagesKey;
+			let appendedAny = false;
+			while (shouldLoadExtraNotificationPage({
+				enabled: isNotificationsPage()
+					&& options.autoLoadNotificationPages
+					&& location.href === pageKey,
+				hasNextPage: Boolean(getNextNotificationPageUrl()),
+				loadedPages: extraNotificationPagesLoaded,
+				maxPages: maxExtraNotificationPages,
+				target: options.autoLoadNotificationTarget,
+				visibleCount: countVisibleNotifications(),
+			})) {
+				const url = getNextNotificationPageUrl();
+				updateExtraNotificationPagesIndicator(true);
+				const result = await loadNotificationPage(url);
+				updateExtraNotificationPagesIndicator(false);
+				if (location.href !== pageKey) {
+					return;
+				}
+				if (result.failed) {
+					extraNotificationPagesExhausted = true;
+					break;
+				}
+				extraNotificationPagesLoaded++;
+				const appended = appendNotificationRows(document, result.rows);
+				setNextNotificationPageUrl(result.next);
+				for (const row of appended) {
+					applyCachedPullRequestFacts(row);
+					applyCachedPullRequestLabelFacts(row);
+					classifyNotification(row);
+				}
+				appendedAny ||= appended.length > 0;
+			}
+			updateExtraNotificationPagesIndicator(false);
+			if (appendedAny) {
+				updateNotificationVisibility();
+			}
+		})().finally(() => {
+			extraNotificationPagesRefreshInFlight = undefined;
+		});
+		return extraNotificationPagesRefreshInFlight;
+	}
+
+	function scheduleExtraNotificationPages() {
+		if (
+			!isNotificationsPage()
+			|| !options.autoLoadNotificationPages
+			|| extraNotificationPagesRefreshInFlight
+		) {
+			return;
+		}
+		clearTimeout(extraNotificationPagesRefresh);
+		extraNotificationPagesRefresh = setTimeout(() => {
+			extraNotificationPagesRefresh = undefined;
+			void loadExtraNotificationPages();
+		}, 250);
 	}
 
 	async function refreshGlobalNotificationIndicator() {
@@ -2831,6 +2984,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				!(node instanceof Element)
 					|| node.classList.contains('github-inbox-tuner-collapse-toggle')
 					|| node.classList.contains('github-inbox-tuner-collapse-chevron')
+					|| node.classList.contains('github-inbox-tuner-loading-more')
 					|| node.classList.contains('github-inbox-tuner-view-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-repository-bulk-actions')
 					|| node.classList.contains('github-inbox-tuner-bulk-dialog')

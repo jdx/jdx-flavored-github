@@ -63,6 +63,8 @@ pages without a token, background polling, or a separate inbox.
   resumes built-in inheritance.
 - Use native GitHub searches for PR and issue views, and loaded-page counts for
   notification views.
+- Append further inbox pages through GitHub's own pagination when the active
+  view filters out most of a page, so a focused inbox is not left nearly empty.
 - Summarize filtered notifications with per-project reason facets that reveal
   each category independently without affecting other repositories.
 - Collapse connected pull-request chains behind an inline expander on a real

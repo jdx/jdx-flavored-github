@@ -32,6 +32,8 @@ export interface SurfaceOverride {
 export type ScopeOverrides = Record<string, Partial<Record<Surface, SurfaceOverride>>>;
 
 export interface ExtensionOptions {
+	autoLoadNotificationPages: boolean;
+	autoLoadNotificationTarget: number;
 	collapseDependencyUpdates: boolean;
 	collapseSameAuthorNotifications: boolean;
 	dimBotNotifications: boolean;
@@ -67,6 +69,8 @@ export interface NotificationFacts {
 }
 
 export const defaultOptions: ExtensionOptions = {
+	autoLoadNotificationPages: true,
+	autoLoadNotificationTarget: 25,
 	collapseDependencyUpdates: true,
 	collapseSameAuthorNotifications: false,
 	dimBotNotifications: true,

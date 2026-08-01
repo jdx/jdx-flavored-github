@@ -117,6 +117,32 @@
 			</section>
 
 			<section>
+				<h2>Inbox pages</h2>
+				<p class="section-intro">
+					GitHub paginates the notification inbox before views filter it, so a
+					focused view can leave one page nearly empty. Extra pages are read
+					from GitHub’s own inbox pages with your existing session.
+				</p>
+				<div class="settings">
+					<label class="checkbox">
+						<input id="auto-load-notification-pages" type="checkbox" checked>
+						<span>Load more inbox pages until the active view has enough notifications</span>
+					</label>
+					<label class="number" for="auto-load-notification-target">
+						<span>Notifications to aim for before loading stops</span>
+						<input
+							id="auto-load-notification-target"
+							type="number"
+							min="1"
+							max="200"
+							step="1"
+							value="25"
+						>
+					</label>
+				</div>
+			</section>
+
+			<section>
 				<h2>Collapsible items</h2>
 				<p class="section-intro">
 					Related notifications, pull requests, and issues can share one expandable row.
