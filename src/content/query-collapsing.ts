@@ -1,6 +1,7 @@
 import type {ExtensionOptions, Surface} from '../shared/types.js';
 import {findStackComponents, isDependencyUpdateAuthor, orderStackItems} from './grouping.js';
 import type {PullRequestMetadata, PullRequestReference} from './pull-request-metadata.js';
+import type {ExpandedStackStore} from './stack-expansion.js';
 
 interface QueryTarget {
   number: number;
@@ -15,7 +16,7 @@ type QueryItem = QueryTarget & {
 };
 
 interface QueryCollapsingDependencies {
-  expandedGroups: Set<string>;
+  expandedGroups: ExpandedStackStore;
   getCachedMetadata: (reference: PullRequestReference) => PullRequestMetadata | undefined;
   getOptions: () => ExtensionOptions;
   getTargets: (surface: Surface) => QueryTarget[];
