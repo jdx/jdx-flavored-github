@@ -713,11 +713,15 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		);
 	}
 
-	function getGlobalDefaultNotificationView() {
-		const globalViews = getViews('notifications');
-		return globalViews.find(
-			view => view.id === getDefaultViewId('notifications'),
-		) ?? globalViews[0];
+	// The header indicator is drawn on every GitHub page, where no view chip is
+	// selected, so it judges rows against the default view. Resolving that view
+	// per repository keeps repository and owner overrides in play instead of
+	// dropping rows the inbox would have shown.
+	function matchesDefaultNotificationView(row: HTMLElement) {
+		return matchesNotificationView(
+			row,
+			getDefaultViewId('notifications', getNotificationRepository(row)),
+		);
 	}
 
 	async function loadNotificationPage(url) {
@@ -912,13 +916,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				if (result.failed) {
 					return;
 				}
-				if (result.rows.some(row => (
-					matchesNotificationExpression(
-						row,
-						getGlobalDefaultNotificationView(),
-						getNotificationRules(),
-					)
-				))) {
+				if (result.rows.some(row => matchesDefaultNotificationView(row))) {
 					hasMatch = true;
 					break;
 				}
@@ -978,7 +976,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 					.map(row => row.dataset.notificationId),
 			);
 			let url = new URL('/notifications?query=is%3Aunread', location.origin).href;
-			let hasFocusedNewNotification = false;
+			let hasVisibleNewNotification = false;
 			let reachedLoadedNotifications = false;
 			for (let page = 0; page < 4 && url && !reachedLoadedNotifications; page++) {
 				const result = await loadNotificationPage(url);
@@ -992,27 +990,29 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 					return;
 				}
 				for (const row of result.rows) {
+					// An already rendered row is not new, but rows after it still
+					// can be. The inbox reorders threads by latest activity and the
+					// page may be showing a narrower query than this scan, so new
+					// notifications are not always a contiguous run at the top.
 					if (loadedIds.has(row.dataset.notificationId)) {
 						reachedLoadedNotifications = true;
-						break;
+						continue;
 					}
-					if (
-						matchesNotificationExpression(
-							row,
-							getGlobalDefaultNotificationView(),
-							getNotificationRules(),
-						)
-					) {
-						hasFocusedNewNotification = true;
+					// The banner asks whether reloading would surface anything, so
+					// it resolves views exactly like the rendered rows do: the
+					// selected view chip when there is one, otherwise the row
+					// repository's default view.
+					if (matchesNotificationView(row, getActiveNotificationViewId(row))) {
+						hasVisibleNewNotification = true;
 						break;
 					}
 				}
-				if (hasFocusedNewNotification) {
+				if (hasVisibleNewNotification) {
 					break;
 				}
 				url = result.next;
 			}
-			if (!hasFocusedNewNotification && url && !reachedLoadedNotifications) {
+			if (!hasVisibleNewNotification && url && !reachedLoadedNotifications) {
 				for (const container of containers) {
 					container.classList.remove(
 						'github-inbox-tuner-recent-alert--checking',
@@ -1025,7 +1025,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				container.classList.remove('github-inbox-tuner-recent-alert--checking');
 				container.classList.toggle(
 					'github-inbox-tuner-recent-alert--hidden',
-					!hasFocusedNewNotification,
+					!hasVisibleNewNotification,
 				);
 			}
 		})().finally(() => {
@@ -2052,7 +2052,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				['repo: · org: · author: · reason:', 'Match notification metadata. Use author:@me for your own pull requests.'],
 				['is: · draft: · conflict: · status: · label: · bot:', 'Match item type, draft state, merge conflicts, checks, labels, or bot activity. Quote labels containing spaces.'],
 				['title:/pattern/i', 'Match notification titles with a regular expression.'],
-				['Default view', 'Controls the initial view, the global notification indicator, and the live new-notification banner.'],
+				['Default view', 'Controls the initial view and the global notification indicator. The live new-notification banner follows the selected view chip.'],
 				['View chip / Filtered reason', 'A view chip selects matching rows; a filtered-reason rule creates a pill that can reveal rows it excluded.'],
 			]
 			: surface === 'pulls'
