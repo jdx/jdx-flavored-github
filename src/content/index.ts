@@ -698,11 +698,15 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		);
 	}
 
-	function getGlobalDefaultNotificationView() {
-		const globalViews = getViews('notifications');
-		return globalViews.find(
-			view => view.id === getDefaultViewId('notifications'),
-		) ?? globalViews[0];
+	// Scans of off-screen notifications judge each row against the default view
+	// of the row's own repository, matching what the inbox does for rendered
+	// rows. Using the global default here would ignore repository and owner
+	// overrides and drop rows the inbox would have shown.
+	function matchesDefaultNotificationView(row: HTMLElement) {
+		return matchesNotificationView(
+			row,
+			getDefaultViewId('notifications', getNotificationRepository(row)),
+		);
 	}
 
 	async function loadNotificationPage(url) {
@@ -743,13 +747,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 				if (result.failed) {
 					return;
 				}
-				if (result.rows.some(row => (
-					matchesNotificationExpression(
-						row,
-						getGlobalDefaultNotificationView(),
-						getNotificationRules(),
-					)
-				))) {
+				if (result.rows.some(row => matchesDefaultNotificationView(row))) {
 					hasMatch = true;
 					break;
 				}
@@ -823,17 +821,15 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 					return;
 				}
 				for (const row of result.rows) {
+					// An already rendered row is not new, but rows after it still
+					// can be. The inbox reorders threads by latest activity and the
+					// page may be showing a narrower query than this scan, so new
+					// notifications are not always a contiguous run at the top.
 					if (loadedIds.has(row.dataset.notificationId)) {
 						reachedLoadedNotifications = true;
-						break;
+						continue;
 					}
-					if (
-						matchesNotificationExpression(
-							row,
-							getGlobalDefaultNotificationView(),
-							getNotificationRules(),
-						)
-					) {
+					if (matchesDefaultNotificationView(row)) {
 						hasFocusedNewNotification = true;
 						break;
 					}
