@@ -26,6 +26,7 @@ import {
 	hasOnlyVisibleBotParticipants,
 	isTerminalPullRequestRow,
 } from './notification-dom.js';
+import {fetchNotificationPageResponse} from './notification-page.js';
 import {
 	parseCommitStatusPartial,
 	parseMergeConflict,
@@ -706,8 +707,8 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	}
 
 	async function loadNotificationPage(url) {
-		const response = await fetch(url, {credentials: 'same-origin'});
-		if (!response.ok) {
+		const response = await fetchNotificationPageResponse(url);
+		if (!response?.ok) {
 			return {failed: true, rows: []};
 		}
 
