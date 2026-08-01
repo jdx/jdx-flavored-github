@@ -1,5 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-	<rect width="128" height="128" rx="28" fill="#0969da"/>
-	<text x="64" y="79" fill="#fff" font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
-		font-size="54" font-weight="800" letter-spacing="-5" text-anchor="middle">jdx</text>
+	<defs>
+		<linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#262c36"/>
+			<stop offset="1" stop-color="#15191f"/>
+		</linearGradient>
+	</defs>
+	<rect width="128" height="128" rx="30" fill="url(#field)"/>
+	<circle cx="76" cy="32" r="10" fill="#4493f8"/>
+	<path d="M76 54 V75 A22 22 0 0 1 54 97 H50" fill="none" stroke="#f0f6fc" stroke-width="16"
+		stroke-linecap="round"/>
 </svg>
