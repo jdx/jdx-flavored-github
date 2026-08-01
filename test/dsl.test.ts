@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as dsl from '../src/dsl/index.ts';
+import {defaultOptions} from '../src/shared/types.ts';
 
 const extensionRoot = new URL('../', import.meta.url);
 const contentCssSource = await readFile(new URL('content.css', extensionRoot), 'utf8');
@@ -258,6 +259,11 @@ assert.match(contentSource, /event\.stopPropagation\(\)/);
 assert.match(contentSource, /scheduleHeaderSettingsButton/);
 assert.match(optionsSource, /showHeaderSettingsButton: 'show-header-settings-button'/);
 assert.match(optionsHtmlSource, /id="show-header-settings-button"/);
+assert.equal(defaultOptions.showHeaderSettingsButton, false);
+assert.doesNotMatch(
+	optionsHtmlSource,
+	/<input id="show-header-settings-button"[^>]*\bchecked\b/,
+);
 assert.match(contentSource, /chip\.hidden = count === 0 && chip\.dataset\.viewId !== activeViewId/);
 assert.match(contentSource, /updateViewChipCount/);
 assert.match(contentSource, /showsArchivedNotifications/);
