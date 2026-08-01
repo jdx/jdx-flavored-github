@@ -1,0 +1,14 @@
+<!-- Optically adjusted master for the 16px and 32px PNGs: tighter corner radius, heavier
+stroke, and a larger tittle so the mark survives rasterization. Keep in sync with icon.svg. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+	<defs>
+		<linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#262c36"/>
+			<stop offset="1" stop-color="#15191f"/>
+		</linearGradient>
+	</defs>
+	<rect width="128" height="128" rx="24" fill="url(#field)"/>
+	<circle cx="77" cy="30" r="12" fill="#4493f8"/>
+	<path d="M77 53 V76 A23 23 0 0 1 54 99 H50" fill="none" stroke="#f0f6fc" stroke-width="19"
+		stroke-linecap="round"/>
+</svg>

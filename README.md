@@ -143,6 +143,12 @@ content script, options page, and service worker into the ignored `dist/`
 directory while copying the manifest, styles, HTML, and icons. Chrome should
 always load `dist`, not the repository root.
 
+`icons/icon.svg` is the canonical logo and the source for `icon-128.png` and
+`icon-48.png`. `icons/icon-small.svg` is the same mark with a heavier stroke, a
+larger tittle, and a tighter corner radius so it survives rasterization, and is
+the source for `icon-32.png` and `icon-16.png`. Regenerate the PNGs from those
+two files whenever either changes.
+
 Run the test suite:
 
 ```sh
