@@ -75,7 +75,6 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	let notificationViewExplicitlySelected = false;
 	let revealedFilterReasonsByList = new WeakMap();
 	let extraNotificationPagesAnchor;
-	let extraNotificationPagesExhausted = false;
 	let extraNotificationPagesKey;
 	let extraNotificationPagesLoaded = 0;
 	let extraNotificationPagesNextUrl;
@@ -749,10 +748,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		return document.querySelector<HTMLAnchorElement>('a[aria-label="Next"]');
 	}
 
+	// The rendered Next link is the source of truth for where the inbox
+	// continues, so GitHub rendering a fresh one resumes loading on its own. The
+	// cached URL only covers a page that renders no pagination to read back.
 	function getNextNotificationPageUrl() {
-		if (extraNotificationPagesExhausted) {
-			return undefined;
-		}
 		if (extraNotificationPagesNextUrl) {
 			return extraNotificationPagesNextUrl;
 		}
@@ -765,7 +764,6 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	// skip past them instead of repeating what the user is looking at.
 	function setNextNotificationPageUrl(url) {
 		extraNotificationPagesNextUrl = url;
-		extraNotificationPagesExhausted = !url;
 		const link = getNotificationNextPageLink();
 		if (!link) {
 			return;
@@ -823,7 +821,6 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		}
 		extraNotificationPagesKey = location.href;
 		extraNotificationPagesAnchor = document.querySelector('.notifications-list-item');
-		extraNotificationPagesExhausted = false;
 		extraNotificationPagesLoaded = 0;
 		extraNotificationPagesNextUrl = undefined;
 	}
