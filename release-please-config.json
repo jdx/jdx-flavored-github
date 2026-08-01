@@ -1,21 +1,21 @@
 {
-	"$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-	"bootstrap-sha": "04d9ce18cf538d849227acd3553653f829e2c45f",
-	"bump-minor-pre-major": true,
-	"draft": true,
-	"force-tag-creation": true,
-	"pull-request-title-pattern": "chore: release ${version}",
-	"release-type": "simple",
-	"packages": {
-		".": {
-			"package-name": "jdx-flavored-github",
-			"extra-files": [
-				{
-					"type": "json",
-					"path": "manifest.json",
-					"jsonpath": "$.version"
-				}
-			]
-		}
-	}
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "04d9ce18cf538d849227acd3553653f829e2c45f",
+  "bump-minor-pre-major": true,
+  "draft": true,
+  "force-tag-creation": true,
+  "pull-request-title-pattern": "chore: release ${version}",
+  "release-type": "simple",
+  "packages": {
+    ".": {
+      "package-name": "jdx-flavored-github",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "manifest.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  }
 }
