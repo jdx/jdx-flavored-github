@@ -63,10 +63,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	builtInViews = dsl.cloneBuiltInViews();
 
 	let options: ExtensionOptions = defaults;
+	let optionsLoaded = false;
 	let activeNotificationView;
 	let notificationViewExplicitlySelected = false;
 	let revealedFilterReasonsByList = new WeakMap();
-	let redirectAttempt;
 	let failedChecksRefresh;
 	let globalIndicatorRefresh;
 	let globalIndicatorRefreshInFlight;
@@ -2712,31 +2712,30 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	}
 
 	function redirectToDefaultView(surface: Surface) {
-		clearTimeout(redirectAttempt);
 		if (
 			!['pulls', 'issues'].includes(surface)
 			|| !getCurrentRepository()
 			|| new URL(location.href).searchParams.has('q')
 		) {
-			return;
+			return false;
 		}
 
 		const view = getViews(surface).find(candidate => candidate.id === getDefaultViewId(surface))
 			?? getViews(surface)[0];
 		if (!view) {
-			return;
+			return false;
 		}
 
-		redirectAttempt = setTimeout(() => {
-			const url = new URL(location.href);
-			if (!url.searchParams.has('q')) {
-				url.searchParams.set('q', view.dsl);
-				location.replace(url);
-			}
-		}, 100);
+		const url = new URL(location.href);
+		url.searchParams.set('q', view.dsl);
+		location.replace(url);
+		return true;
 	}
 
 	function apply() {
+		if (!optionsLoaded) {
+			return;
+		}
 		const surface = getSurface();
 		scheduleHeaderSettingsButton();
 		scheduleGlobalIndicatorRefresh();
@@ -2751,25 +2750,33 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		}
 
 		if (surface) {
-			redirectToDefaultView(surface);
+			if (redirectToDefaultView(surface)) {
+				return;
+			}
 			updateViewBar(surface);
 			scheduleQueryListCollapseRefresh(surface);
 		}
 	}
 
 	async function loadOptions() {
-		const [storedOptions] = await Promise.all([
-			chrome.storage.sync.get(Object.keys(defaults)),
+		const cacheHydration = Promise.all([
 			hydratePullRequestChecksCache(),
 			hydratePullRequestLabelsCache(),
 			hydratePullRequestMetadataCache(),
 		]);
+		const storedOptions = await chrome.storage.sync.get(Object.keys(defaults));
 		options = {...defaults, ...storedOptions};
 		builtInNotificationRules = dsl.cloneBuiltInNotificationRules();
 		builtInViews = dsl.cloneBuiltInViews();
 		activeNotificationView = getDefaultViewId('notifications');
 		notificationViewExplicitlySelected = false;
-		apply();
+		optionsLoaded = true;
+		const surface = getSurface();
+		const redirecting = surface ? redirectToDefaultView(surface) : false;
+		await cacheHydration;
+		if (!redirecting) {
+			apply();
+		}
 	}
 
 	for (const eventName of ['DOMContentLoaded', 'turbo:load', 'turbo:render', 'soft-nav:end']) {
