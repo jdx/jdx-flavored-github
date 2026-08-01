@@ -4,6 +4,8 @@ import {Window} from 'happy-dom';
 
 import {
 	appendNotificationRows,
+	getUsableNextPageHref,
+	hiddenClassName,
 	shouldLoadExtraNotificationPage,
 } from '../src/content/notification-pagination.ts';
 
@@ -67,6 +69,21 @@ test('loads another inbox page only while the active view stays short', () => {
 		shouldLoadExtraNotificationPage({...baseState, loadedPages: 5}),
 		false,
 	);
+});
+
+test('stops trusting a Next link that was hidden for an exhausted inbox', () => {
+	const window = inbox(
+		'<a aria-label="Next" href="/notifications?page=4">Next</a>',
+	);
+	const link = window.document.querySelector(
+		'a[aria-label="Next"]',
+	) as unknown as Element;
+
+	assert.equal(getUsableNextPageHref(link), '/notifications?page=4');
+
+	link.classList.add(hiddenClassName);
+	assert.equal(getUsableNextPageHref(link), undefined);
+	assert.equal(getUsableNextPageHref(undefined), undefined);
 });
 
 test('merges a fetched page into the repository groups already on screen', () => {

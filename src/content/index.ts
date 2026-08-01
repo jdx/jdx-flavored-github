@@ -37,6 +37,8 @@ import type {
 } from './pull-request-metadata.js';
 import {
 	appendNotificationRows,
+	getUsableNextPageHref,
+	hiddenClassName,
 	shouldLoadExtraNotificationPage,
 } from './notification-pagination.js';
 import {createQueryListCollapsing} from './query-collapsing.js';
@@ -755,7 +757,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			return extraNotificationPagesNextUrl;
 		}
 
-		const href = getNotificationNextPageLink()?.getAttribute('href');
+		const href = getUsableNextPageHref(getNotificationNextPageLink());
 		return href ? new URL(href, location.origin).href : undefined;
 	}
 
@@ -768,7 +770,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		if (!link) {
 			return;
 		}
-		link.classList.toggle('github-inbox-tuner-hidden', !url);
+		link.classList.toggle(hiddenClassName, !url);
 		if (url) {
 			const next = new URL(url);
 			link.setAttribute('href', `${next.pathname}${next.search}`);
@@ -857,11 +859,12 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 					if (location.href !== pageKey) {
 						return;
 					}
+					// A failed page is a spent request, not the end of the inbox, so
+					// it costs budget and a later pass can retry it.
+					extraNotificationPagesLoaded++;
 					if (result.failed) {
-						extraNotificationPagesExhausted = true;
 						break;
 					}
-					extraNotificationPagesLoaded++;
 					const appended = appendNotificationRows(document, result.rows);
 					setNextNotificationPageUrl(result.next);
 					for (const row of appended) {

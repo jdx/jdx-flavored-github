@@ -21,6 +21,20 @@ export function shouldLoadExtraNotificationPage(
 		&& state.visibleCount < state.target;
 }
 
+export const hiddenClassName = 'github-inbox-tuner-hidden';
+
+// A Next link this run already hid points into pages that are on screen, so its
+// href stops being a usable continuation once the inbox has run out. GitHub
+// renders a fresh, unhidden link whenever it re-renders the list.
+export function getUsableNextPageHref(
+	link?: Element | null,
+): string | undefined {
+	if (!link || link.classList.contains(hiddenClassName)) {
+		return undefined;
+	}
+	return link.getAttribute('href') ?? undefined;
+}
+
 export function getNotificationRowKey(row: Element): string | undefined {
 	const id = (row as HTMLElement).dataset?.notificationId;
 	if (id) {
