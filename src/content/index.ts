@@ -72,6 +72,7 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 	let activeNotificationView;
 	let notificationViewExplicitlySelected = false;
 	let revealedFilterReasonsByList = new WeakMap();
+	let extraNotificationPagesAnchor;
 	let extraNotificationPagesExhausted = false;
 	let extraNotificationPagesKey;
 	let extraNotificationPagesLoaded = 0;
@@ -767,11 +768,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		if (!link) {
 			return;
 		}
+		link.classList.toggle('github-inbox-tuner-hidden', !url);
 		if (url) {
 			const next = new URL(url);
 			link.setAttribute('href', `${next.pathname}${next.search}`);
-		} else {
-			link.classList.add('github-inbox-tuner-hidden');
 		}
 	}
 
@@ -808,11 +808,19 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 		anchor.after(indicator);
 	}
 
+	// Leaving the inbox and coming back re-renders a fresh first page under the
+	// same URL, so a spent page budget would stop auto-loading for a list that no
+	// longer holds anything this run appended. Anchor the budget to a row that
+	// only survives while the rendered list does.
 	function resetExtraNotificationPages() {
-		if (extraNotificationPagesKey === location.href) {
+		if (
+			extraNotificationPagesKey === location.href
+			&& extraNotificationPagesAnchor?.isConnected
+		) {
 			return;
 		}
 		extraNotificationPagesKey = location.href;
+		extraNotificationPagesAnchor = document.querySelector('.notifications-list-item');
 		extraNotificationPagesExhausted = false;
 		extraNotificationPagesLoaded = 0;
 		extraNotificationPagesNextUrl = undefined;
@@ -827,38 +835,45 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
 			resetExtraNotificationPages();
 			const pageKey = extraNotificationPagesKey;
 			let appendedAny = false;
-			while (shouldLoadExtraNotificationPage({
-				enabled: isNotificationsPage()
-					&& options.autoLoadNotificationPages
-					&& location.href === pageKey,
-				hasNextPage: Boolean(getNextNotificationPageUrl()),
-				loadedPages: extraNotificationPagesLoaded,
-				maxPages: maxExtraNotificationPages,
-				target: options.autoLoadNotificationTarget,
-				visibleCount: countVisibleNotifications(),
-			})) {
-				const url = getNextNotificationPageUrl();
-				updateExtraNotificationPagesIndicator(true);
-				const result = await loadNotificationPage(url);
+			try {
+				while (shouldLoadExtraNotificationPage({
+					enabled: isNotificationsPage()
+						&& options.autoLoadNotificationPages
+						&& location.href === pageKey,
+					hasNextPage: Boolean(getNextNotificationPageUrl()),
+					loadedPages: extraNotificationPagesLoaded,
+					maxPages: maxExtraNotificationPages,
+					target: options.autoLoadNotificationTarget,
+					visibleCount: countVisibleNotifications(),
+				})) {
+					const url = getNextNotificationPageUrl();
+					updateExtraNotificationPagesIndicator(true);
+					// An offline or blocked fetch rejects instead of returning a
+					// failed response, and it stops auto-loading either way.
+					const result = await loadNotificationPage(url).catch(
+						() => ({failed: true, next: undefined, rows: []}),
+					);
+					updateExtraNotificationPagesIndicator(false);
+					if (location.href !== pageKey) {
+						return;
+					}
+					if (result.failed) {
+						extraNotificationPagesExhausted = true;
+						break;
+					}
+					extraNotificationPagesLoaded++;
+					const appended = appendNotificationRows(document, result.rows);
+					setNextNotificationPageUrl(result.next);
+					for (const row of appended) {
+						applyCachedPullRequestFacts(row);
+						applyCachedPullRequestLabelFacts(row);
+						classifyNotification(row);
+					}
+					appendedAny ||= appended.length > 0;
+				}
+			} finally {
 				updateExtraNotificationPagesIndicator(false);
-				if (location.href !== pageKey) {
-					return;
-				}
-				if (result.failed) {
-					extraNotificationPagesExhausted = true;
-					break;
-				}
-				extraNotificationPagesLoaded++;
-				const appended = appendNotificationRows(document, result.rows);
-				setNextNotificationPageUrl(result.next);
-				for (const row of appended) {
-					applyCachedPullRequestFacts(row);
-					applyCachedPullRequestLabelFacts(row);
-					classifyNotification(row);
-				}
-				appendedAny ||= appended.length > 0;
 			}
-			updateExtraNotificationPagesIndicator(false);
 			if (appendedAny) {
 				updateNotificationVisibility();
 			}

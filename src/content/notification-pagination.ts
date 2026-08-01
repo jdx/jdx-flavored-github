@@ -125,15 +125,15 @@ export function appendNotificationRows(
 			continue;
 		}
 
+		// Without repository groups the inbox is one flat list, so the trailing
+		// list is the only place these rows can go. Leave it out of the
+		// repository index, which is only meaningful for grouped inboxes.
 		const list = existingList ?? lastList;
 		if (!list) {
 			continue;
 		}
 		for (const row of items) {
 			list.append(document_.adoptNode(row));
-		}
-		if (repository && !listsByRepository.has(repository)) {
-			listsByRepository.set(repository, list);
 		}
 		appended.push(...items);
 	}

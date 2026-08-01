@@ -30,6 +30,15 @@ function group(repository: string, ids: number[]) {
 	`;
 }
 
+function flatList(entries: Array<[string, number]>) {
+	const rows = entries.map(([repository, id]) => `
+		<li class="notifications-list-item" data-notification-id="${id}">
+			<a class="notification-list-item-link" href="/${repository}/pull/${id}">Item ${id}</a>
+		</li>
+	`).join('');
+	return `<ul class="js-notifications-list">${rows}</ul>`;
+}
+
 function inbox(html: string) {
 	const window = new Window({url: 'https://github.com/notifications'});
 	Object.defineProperty(globalThis, 'location', {
@@ -78,6 +87,31 @@ test('merges a fetched page into the repository groups already on screen', () =>
 		['2'],
 	);
 	assert.equal(document.querySelectorAll('.js-notifications-group').length, 1);
+	assert.deepEqual(
+		[...document.querySelectorAll('.js-notifications-list > .notifications-list-item')]
+			.map(row => (row as unknown as HTMLElement).dataset.notificationId),
+		['1', '2'],
+	);
+});
+
+test('appends to the trailing list when the inbox has no repository groups', () => {
+	const window = inbox(flatList([['jdx/mise', 1]]));
+	const {document} = window;
+	const fetched = new window.DOMParser().parseFromString(
+		flatList([['jdx/mise', 1], ['jdx/usage', 2]]),
+		'text/html',
+	);
+
+	const appended = appendNotificationRows(
+		document as unknown as Document,
+		[...fetched.querySelectorAll('.notifications-list-item')] as unknown as HTMLElement[],
+	);
+
+	assert.deepEqual(
+		appended.map(row => row.dataset.notificationId),
+		['2'],
+	);
+	assert.equal(document.querySelectorAll('.js-notifications-list').length, 1);
 	assert.deepEqual(
 		[...document.querySelectorAll('.js-notifications-list > .notifications-list-item')]
 			.map(row => (row as unknown as HTMLElement).dataset.notificationId),
