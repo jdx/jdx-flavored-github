@@ -70,7 +70,7 @@ export const defaultOptions: ExtensionOptions = {
 	collapseDependencyUpdates: true,
 	collapseSameAuthorNotifications: false,
 	dimBotNotifications: true,
-	showHeaderSettingsButton: true,
+	showHeaderSettingsButton: false,
 	ownerViewOverrides: {},
 	repositoryViewOverrides: {},
 	viewOverrides: {},
