@@ -1,15 +1,12 @@
-type Fetch = (
-	input: RequestInfo | URL,
-	init?: RequestInit,
-) => Promise<Response>;
+type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export async function fetchNotificationPageResponse(
-	url: string,
-	fetch_: Fetch = fetch,
+  url: string,
+  fetch_: Fetch = fetch,
 ): Promise<Response | undefined> {
-	try {
-		return await fetch_(url, {credentials: 'same-origin'});
-	} catch {
-		return undefined;
-	}
+  try {
+    return await fetch_(url, {credentials: 'same-origin'});
+  } catch {
+    return undefined;
+  }
 }

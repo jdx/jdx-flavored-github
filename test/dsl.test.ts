@@ -7,100 +7,101 @@ const extensionRoot = new URL('../', import.meta.url);
 const contentCssSource = await readFile(new URL('content.css', extensionRoot), 'utf8');
 const optionsCssSource = await readFile(new URL('options.css', extensionRoot), 'utf8');
 
-const facts = overrides => ({
-	author: 'jdx',
-	bot: false,
-	checkStatus: 'success',
-	closedIssue: false,
-	closedPullRequest: false,
-	done: false,
-	draft: false,
-	issue: false,
-	labels: [],
-	mergeConflict: false,
-	mergedPullRequest: false,
-	notificationType: 'pr',
-	organization: 'jdx',
-	ownPullRequest: false,
-	pullRequest: true,
-	read: true,
-	reason: 'comment',
-	repository: 'jdx/mise',
-	saved: false,
-	title: 'fix: ordinary pull request',
-	...overrides,
+const facts = (overrides) => ({
+  author: 'jdx',
+  bot: false,
+  checkStatus: 'success',
+  closedIssue: false,
+  closedPullRequest: false,
+  done: false,
+  draft: false,
+  issue: false,
+  labels: [],
+  mergeConflict: false,
+  mergedPullRequest: false,
+  notificationType: 'pr',
+  organization: 'jdx',
+  ownPullRequest: false,
+  pullRequest: true,
+  read: true,
+  reason: 'comment',
+  repository: 'jdx/mise',
+  saved: false,
+  title: 'fix: ordinary pull request',
+  ...overrides,
 });
 
 function evaluate(source, overrides = {}) {
-	const notificationFacts = facts(overrides);
-	const evaluateRule = (ruleId, evaluating = new Set()) => {
-		if (evaluating.has(ruleId)) {
-			return false;
-		}
-		const rule = dsl.builtInNotificationRules.find(candidate => candidate.id === ruleId);
-		if (!rule) {
-			return false;
-		}
-		const next = new Set(evaluating).add(ruleId);
-		return dsl.evaluateNotificationDsl(
-			dsl.parseNotificationDsl(rule.dsl),
-			notificationFacts,
-			referencedId => evaluateRule(referencedId, next),
-		);
-	};
-	return dsl.evaluateNotificationDsl(
-		dsl.parseNotificationDsl(source),
-		notificationFacts,
-		ruleId => evaluateRule(ruleId),
-	);
+  const notificationFacts = facts(overrides);
+  const evaluateRule = (ruleId, evaluating = new Set()) => {
+    if (evaluating.has(ruleId)) {
+      return false;
+    }
+    const rule = dsl.builtInNotificationRules.find((candidate) => candidate.id === ruleId);
+    if (!rule) {
+      return false;
+    }
+    const next = new Set(evaluating).add(ruleId);
+    return dsl.evaluateNotificationDsl(
+      dsl.parseNotificationDsl(rule.dsl),
+      notificationFacts,
+      (referencedId) => evaluateRule(referencedId, next),
+    );
+  };
+  return dsl.evaluateNotificationDsl(
+    dsl.parseNotificationDsl(source),
+    notificationFacts,
+    (ruleId) => evaluateRule(ruleId),
+  );
 }
 
 for (const view of dsl.builtInViews.notifications) {
-	assert.doesNotThrow(() => dsl.parseNotificationDsl(view.dsl), view.label);
+  assert.doesNotThrow(() => dsl.parseNotificationDsl(view.dsl), view.label);
 }
 assert.doesNotThrow(() => dsl.validateNotificationRules(dsl.builtInNotificationRules));
 for (const surface of ['notifications', 'pulls', 'issues'] as const) {
-	assert.doesNotThrow(() => dsl.validateBulkActions(
-		surface === 'notifications'
-			? dsl.builtInNotificationRules
-			: dsl.builtInViews[surface],
-		surface,
-	));
+  assert.doesNotThrow(() =>
+    dsl.validateBulkActions(
+      surface === 'notifications' ? dsl.builtInNotificationRules : dsl.builtInViews[surface],
+      surface,
+    ),
+  );
 }
 assert.equal(dsl.builtInDefaultViewIds.issues, 'all');
 assert.throws(
-	() => dsl.validateBulkActions([{
-		id: 'example',
-		label: 'Example',
-		dsl: 'is:open is:pr',
-		actions: [{
-			id: 'bad-order',
-			label: 'Bad order',
-			steps: [{type: 'pr:close'}, {type: 'open'}],
-		}],
-	}], 'pulls'),
-	/must put its lifecycle or label step last/,
+  () =>
+    dsl.validateBulkActions(
+      [
+        {
+          id: 'example',
+          label: 'Example',
+          dsl: 'is:open is:pr',
+          actions: [
+            {
+              id: 'bad-order',
+              label: 'Bad order',
+              steps: [{type: 'pr:close'}, {type: 'open'}],
+            },
+          ],
+        },
+      ],
+      'pulls',
+    ),
+  /must put its lifecycle or label step last/,
 );
-assert.equal(
-	dsl.builtInNotificationRules.find(rule => rule.id === 'draft').showAsReason,
-	true,
-);
-assert.equal(
-	dsl.builtInNotificationRules.find(rule => rule.id === 'draft').showAsView,
-	false,
+assert.equal(dsl.builtInNotificationRules.find((rule) => rule.id === 'draft').showAsReason, true);
+assert.equal(dsl.builtInNotificationRules.find((rule) => rule.id === 'draft').showAsView, false);
+assert.throws(
+  () => dsl.validateNotificationRules([{id: 'one', dsl: 'rule:missing'}]),
+  /missing rule:missing/,
 );
 assert.throws(
-	() => dsl.validateNotificationRules([
-		{id: 'one', dsl: 'rule:missing'},
-	]),
-	/missing rule:missing/,
-);
-assert.throws(
-	() => dsl.validateNotificationRules([
-		{id: 'one', dsl: 'rule:two'},
-		{id: 'two', dsl: 'rule:one'},
-	]),
-	/Rule cycle/,
+  () =>
+    dsl.validateNotificationRules([
+      {id: 'one', dsl: 'rule:two'},
+      {id: 'two', dsl: 'rule:one'},
+    ]),
+  /Rule cycle/,
 );
 
 const focused = dsl.builtInViews.notifications[0].dsl;
@@ -133,11 +134,8 @@ assert.equal(evaluate('conflict:true', {mergeConflict: true}), true);
 assert.equal(evaluate('conflict:false', {mergeConflict: false}), true);
 assert.equal(evaluate('-label:release', {labels: ['bug']}), true);
 assert.deepEqual(
-	[...dsl.getNotificationQualifierValues(
-		'label:release OR label:"release candidate"',
-		'label',
-	)],
-	['release', 'release candidate'],
+  [...dsl.getNotificationQualifierValues('label:release OR label:"release candidate"', 'label')],
+  ['release', 'release candidate'],
 );
 assert.equal(evaluate('author:me', {ownPullRequest: true}), false);
 assert.equal(evaluate('is:issue-or-pull-request'), true);
@@ -146,97 +144,96 @@ assert.equal(evaluate('is:closed', {mergedPullRequest: true}), true);
 assert.equal(evaluate('is:unread', {read: false}), true);
 assert.equal(evaluate('is:done', {done: true}), true);
 assert.equal(evaluate('is:saved', {saved: true}), true);
-assert.equal(evaluate('is:repository-vulnerability-alert', {
-	notificationType: 'repository-vulnerability-alert',
-}), true);
+assert.equal(
+  evaluate('is:repository-vulnerability-alert', {
+    notificationType: 'repository-vulnerability-alert',
+  }),
+  true,
+);
 
 for (const removedAtom of [
-	'all',
-	'mention',
-	'team-mention',
-	'review-requested',
-	'draft',
-	'failing',
-	'pending',
+  'all',
+  'mention',
+  'team-mention',
+  'review-requested',
+  'draft',
+  'failing',
+  'pending',
 ]) {
-	assert.throws(
-		() => dsl.parseNotificationDsl(removedAtom),
-		/Unknown notification condition/,
-		`Removed atom still accepted: ${removedAtom}`,
-	);
+  assert.throws(
+    () => dsl.parseNotificationDsl(removedAtom),
+    /Unknown notification condition/,
+    `Removed atom still accepted: ${removedAtom}`,
+  );
 }
 
 for (const invalid of [
-	'',
-	'NOT',
-	'reason:nope',
-	'status:nope',
-	'draft:maybe',
-	'is:nope',
-	'(reason:mention',
-	'reason:mention OR',
+  '',
+  'NOT',
+  'reason:nope',
+  'status:nope',
+  'draft:maybe',
+  'is:nope',
+  '(reason:mention',
+  'reason:mention OR',
 ]) {
-	assert.throws(() => dsl.parseNotificationDsl(invalid), undefined, invalid);
+  assert.throws(() => dsl.parseNotificationDsl(invalid), undefined, invalid);
 }
 
 const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionRoot), 'utf8'));
-const packageManifest = JSON.parse(
-	await readFile(new URL('package.json', extensionRoot), 'utf8'),
-);
+const packageManifest = JSON.parse(await readFile(new URL('package.json', extensionRoot), 'utf8'));
 const releaseManifest = JSON.parse(
-	await readFile(new URL('.release-please-manifest.json', extensionRoot), 'utf8'),
+  await readFile(new URL('.release-please-manifest.json', extensionRoot), 'utf8'),
 );
 assert.match(manifest.version, /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/);
 assert.equal(manifest.version, releaseManifest['.']);
 assert.equal(packageManifest.packageManager, 'aube@1.36.0');
 assert.deepEqual(
-	manifest.content_scripts[0].js,
-	['content.js'],
-	'The content bundle must be self-contained',
+  manifest.content_scripts[0].js,
+  ['content.js'],
+  'The content bundle must be self-contained',
 );
 for (const relativePath of [
-	'content.css',
-	'options.css',
-	'options.html',
-	'README.md',
-	'aube-lock.yaml',
-	'mise.toml',
-	'src/background.ts',
-	'src/content/index.ts',
-	'src/dsl/index.ts',
-	'src/options/index.ts',
-	'tsconfig.json',
-	'dist/background.js',
-	'dist/content.js',
-	'dist/options.js',
+  'content.css',
+  'options.css',
+  'options.html',
+  'README.md',
+  'aube-lock.yaml',
+  'mise.toml',
+  'src/background.ts',
+  'src/content/index.ts',
+  'src/dsl/index.ts',
+  'src/options/index.ts',
+  'tsconfig.json',
+  'dist/background.js',
+  'dist/content.js',
+  'dist/options.js',
 ]) {
-	await assert.doesNotReject(() => readFile(new URL(relativePath, extensionRoot)));
+  await assert.doesNotReject(() => readFile(new URL(relativePath, extensionRoot)));
 }
 
-const contentSource = (await Promise.all([
-	'src/content/index.ts',
-	'src/content/grouping.ts',
-	'src/content/notification-dom.ts',
-	'src/content/page.ts',
-	'src/content/pull-request-metadata.ts',
-	'src/content/query-collapsing.ts',
-	'src/content/status.ts',
-].map(path => readFile(new URL(path, extensionRoot), 'utf8')))).join('\n');
+const contentSource = (
+  await Promise.all(
+    [
+      'src/content/index.ts',
+      'src/content/grouping.ts',
+      'src/content/notification-dom.ts',
+      'src/content/page.ts',
+      'src/content/pull-request-metadata.ts',
+      'src/content/query-collapsing.ts',
+      'src/content/status.ts',
+    ].map((path) => readFile(new URL(path, extensionRoot), 'utf8')),
+  )
+).join('\n');
 const dslSource = await readFile(new URL('src/dsl/index.ts', extensionRoot), 'utf8');
 const optionsSource = await readFile(new URL('src/options/index.ts', extensionRoot), 'utf8');
 const backgroundSource = await readFile(new URL('src/background.ts', extensionRoot), 'utf8');
 const optionsHtmlSource = await readFile(new URL('options.html', extensionRoot), 'utf8');
-const allText = [
-	contentSource,
-	dslSource,
-	optionsSource,
-	backgroundSource,
-	optionsHtmlSource,
-];
+const allText = [contentSource, dslSource, optionsSource, backgroundSource, optionsHtmlSource];
 assert.doesNotMatch(
-	allText.join('\n'),
-	/\b(?:legacy|migration)\b/i,
-	'Do not add compatibility or migration paths before the first release',
+  allText.join('\n'),
+  /\b(?:legacy|migration)\b/i,
+  'Do not add compatibility or migration paths before the first release',
 );
 assert.match(contentSource, /scheduleRecentNotificationsAlertRefresh\(\);/);
 assert.match(contentSource, /window\.addEventListener\('unhandledrejection'/);
@@ -260,10 +257,7 @@ assert.match(contentSource, /scheduleHeaderSettingsButton/);
 assert.match(optionsSource, /showHeaderSettingsButton: 'show-header-settings-button'/);
 assert.match(optionsHtmlSource, /id="show-header-settings-button"/);
 assert.equal(defaultOptions.showHeaderSettingsButton, false);
-assert.doesNotMatch(
-	optionsHtmlSource,
-	/<input id="show-header-settings-button"[^>]*\bchecked\b/,
-);
+assert.doesNotMatch(optionsHtmlSource, /<input id="show-header-settings-button"[^>]*\bchecked\b/);
 assert.match(contentSource, /chip\.hidden = count === 0 && chip\.dataset\.viewId !== activeViewId/);
 assert.match(contentSource, /updateViewChipCount/);
 assert.match(contentSource, /showsArchivedNotifications/);
@@ -295,14 +289,20 @@ assert.doesNotMatch(contentSource, /updateMergedDoneAction/);
 assert.match(contentSource, /exactStatuses/);
 assert.match(contentSource, /enrichExactPullRequestMetadata\(rows\)/);
 assert.match(contentSource, /String\(checkStatus === 'failure'\)/);
-assert.match(contentSource, /githubInboxTunerCheckStatusSource = exactStatus \? 'exact' : 'search'/);
+assert.match(
+  contentSource,
+  /githubInboxTunerCheckStatusSource = exactStatus \? 'exact' : 'search'/,
+);
 assert.match(contentSource, /\{cache: 'no-store', credentials: 'same-origin'\}/);
 assert.match(contentSource, /checks-statuses-rollups/);
 assert.match(contentSource, /items\[item-0\]\[\$\{name\}\]/);
 assert.match(contentSource, /statusPayload\['item-0'\]/);
 assert.match(contentSource, /\.color-fg-danger, \.octicon-x/);
 assert.match(contentSource, /ownerViewOverrides/);
-assert.match(contentSource, /return checkStatus \|\| metadata\.statusBatch \? metadata : undefined/);
+assert.match(
+  contentSource,
+  /return checkStatus \|\| metadata\.statusBatch \? metadata : undefined/,
+);
 assert.match(contentSource, /'button, \[aria-label\], img\[alt\]'/);
 assert.match(contentSource, /\\bchecks \(failing\|pending\|passing\)\\b/);
 assert.doesNotMatch(contentSource, /\^checks \(\?:failing\|pending\|passing\)\$/);
@@ -314,18 +314,18 @@ assert.match(contentSource, /validateBulkActions/);
 assert.match(optionsSource, /chrome\.storage\.sync\.set\(imported\)/);
 assert.doesNotMatch(contentSource, /console\.(?:debug|log|warn)\(/);
 assert.match(
-	contentCssSource,
-	/#github-inbox-tuner-views\s*\{[^}]*flex-wrap:\s*wrap\s*!important;[^}]*overflow:\s*visible\s*!important;/s,
+  contentCssSource,
+  /#github-inbox-tuner-views\s*\{[^}]*flex-wrap:\s*wrap\s*!important;[^}]*overflow:\s*visible\s*!important;/s,
 );
 assert.match(contentCssSource, /max-width:\s*100%\s*!important/);
 assert.match(contentCssSource, /width:\s*100%\s*!important/);
 assert.match(
-	contentCssSource,
-	/#github-inbox-tuner-views\s*\{[^}]*min-height:\s*36px;[^}]*padding:\s*2px 0 8px\s*!important;/s,
+  contentCssSource,
+  /#github-inbox-tuner-views\s*\{[^}]*min-height:\s*36px;[^}]*padding:\s*2px 0 8px\s*!important;/s,
 );
 assert.match(
-	contentCssSource,
-	/\.github-inbox-tuner-view-chip\s*\{[^}]*box-sizing:\s*border-box;[^}]*line-height:\s*20px;[^}]*min-height:\s*26px;[^}]*padding:\s*2px 8px;/s,
+  contentCssSource,
+  /\.github-inbox-tuner-view-chip\s*\{[^}]*box-sizing:\s*border-box;[^}]*line-height:\s*20px;[^}]*min-height:\s*26px;[^}]*padding:\s*2px 8px;/s,
 );
 assert.match(contentSource, /bar\.style\.removeProperty\('max-width'\)/);
 assert.match(contentSource, /updateQueryListCollapses/);
@@ -350,19 +350,25 @@ assert.match(contentSource, /github-inbox-tuner-collapse-chevron/);
 assert.match(contentSource, /github-inbox-tuner-list-check-status/);
 assert.match(contentCssSource, /\.github-inbox-tuner-query-member--collapsed/);
 assert.match(
-	contentCssSource,
-	/\.github-inbox-tuner-query-member--expanded\s*\{[^}]*background:\s*linear-gradient\([^}]*14px 16px[^}]*border-left:\s*0 !important;[^}]*margin-left:\s*0 !important;[^}]*width:\s*100% !important;/s,
+  contentCssSource,
+  /\.github-inbox-tuner-query-member--expanded\s*\{[^}]*background:\s*linear-gradient\([^}]*14px 16px[^}]*border-left:\s*0 !important;[^}]*margin-left:\s*0 !important;[^}]*width:\s*100% !important;/s,
 );
 assert.match(
-	contentCssSource,
-	/\.github-inbox-tuner-query-member--expanded > \.Box-row--drag-hide\s*\{[^}]*margin-left:\s*16px;[^}]*width:\s*calc\(100% - 16px\);/s,
+  contentCssSource,
+  /\.github-inbox-tuner-query-member--expanded > \.Box-row--drag-hide\s*\{[^}]*margin-left:\s*16px;[^}]*width:\s*calc\(100% - 16px\);/s,
 );
-assert.match(contentCssSource, /\.github-inbox-tuner-list-collapse-chevron\s*\{[^}]*font-size:\s*14px;[^}]*height:\s*24px;[^}]*position:\s*absolute;[^}]*right:\s*44px;[^}]*top:\s*8px;[^}]*width:\s*24px;/s);
 assert.match(
-	contentCssSource,
-	/\.github-inbox-tuner-collapse-toggle\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*width:\s*100%;/s,
+  contentCssSource,
+  /\.github-inbox-tuner-list-collapse-chevron\s*\{[^}]*font-size:\s*14px;[^}]*height:\s*24px;[^}]*position:\s*absolute;[^}]*right:\s*44px;[^}]*top:\s*8px;[^}]*width:\s*24px;/s,
 );
-assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder\s*\{[^}]*border-bottom:\s*1px solid[^}]*height:\s*10px;[^}]*width:\s*100%;/s);
+assert.match(
+  contentCssSource,
+  /\.github-inbox-tuner-collapse-toggle\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*width:\s*100%;/s,
+);
+assert.match(
+  contentCssSource,
+  /\.github-inbox-tuner-collapse-placeholder\s*\{[^}]*border-bottom:\s*1px solid[^}]*height:\s*10px;[^}]*width:\s*100%;/s,
+);
 assert.match(contentSource, /github-inbox-tuner-collapse-placeholders/);
 assert.equal(contentSource.match(/index < 2/g)?.length, 2);
 assert.doesNotMatch(contentSource, /Math\.min\(group\.length - 1, 5\)/);
@@ -377,12 +383,18 @@ assert.match(contentSource, /complete: false/);
 assert.match(contentSource, /getCachedPullRequestGroupingMetadata/);
 assert.match(contentSource, /decorateNotificationGroups\(cachedItems\)/);
 assert.match(contentSource, /function decorateCachedNotificationStacks\(\)/);
-assert.match(contentSource, /notificationStackGeneration\+\+;\s*decorateCachedNotificationStacks\(\);/s);
-assert.match(contentCssSource, /\.github-inbox-tuner-collapse-toggle\.github-inbox-tuner-collapse-toggle--expanded\s*\{[^}]*display:\s*none !important;/s);
+assert.match(
+  contentSource,
+  /notificationStackGeneration\+\+;\s*decorateCachedNotificationStacks\(\);/s,
+);
+assert.match(
+  contentCssSource,
+  /\.github-inbox-tuner-collapse-toggle\.github-inbox-tuner-collapse-toggle--expanded\s*\{[^}]*display:\s*none !important;/s,
+);
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-placeholder/);
 assert.match(
-	contentCssSource,
-	/\.github-inbox-tuner-list-collapse-toggle\s*\{[^}]*background:\s*var\(--bgColor-muted, var\(--color-canvas-subtle\)\);[^}]*display:\s*grid;/s,
+  contentCssSource,
+  /\.github-inbox-tuner-list-collapse-toggle\s*\{[^}]*background:\s*var\(--bgColor-muted, var\(--color-canvas-subtle\)\);[^}]*display:\s*grid;/s,
 );
 assert.match(contentCssSource, /\.github-inbox-tuner-collapse-member--expanded/);
 assert.match(contentCssSource, /\.notifications-list-item\.github-inbox-tuner-revealed/);

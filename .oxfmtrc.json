@@ -1,0 +1,6 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "bracketSpacing": false,
+  "ignorePatterns": ["aube-lock.yaml", ".release-please-manifest.json"],
+  "singleQuote": true
+}
