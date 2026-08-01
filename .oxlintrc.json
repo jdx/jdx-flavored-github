@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "error",
+    "perf": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-sort": "off",
+    "eslint/no-await-in-loop": "off",
+    "eslint/no-underscore-dangle": "off",
+    "oxc/no-map-spread": "off"
+  },
+  "env": {
+    "browser": true,
+    "builtin": true,
+    "es2023": true
+  },
+  "overrides": [
+    {
+      "files": ["scripts/**", "test/**"],
+      "env": {
+        "node": true
+      }
+    }
+  ]
+}

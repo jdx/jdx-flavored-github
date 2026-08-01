@@ -11,12 +11,46 @@
 After rebuilding, reload the extension on `chrome://extensions` and refresh the
 GitHub page being tested.
 
+## Linting and formatting
+
+[oxlint](https://oxc.rs/docs/guide/usage/linter) checks the code and
+[oxfmt](https://oxc.rs/docs/guide/usage/formatter) formats it. Both are pinned
+as dev dependencies and enforced in CI.
+
+```sh
+aube run lint
+aube run format
+```
+
+Use `aube run lint:fix` to apply the linter's automatic fixes and
+`aube run format:check` to verify formatting without rewriting files.
+
+Formatting is two-space indentation, single quotes, semicolons, trailing
+commas, and a 100-column print width, configured in
+[.oxfmtrc.json](.oxfmtrc.json). Do not hand-format; run the formatter.
+
+The lint rules live in [.oxlintrc.json](.oxlintrc.json) and enable oxlint's
+`correctness`, `suspicious`, and `perf` categories. A few rules are turned off
+because they conflict with deliberate patterns in this codebase: sequential
+`await` in loops is intentional for GitHub request pacing, trailing-underscore
+parameter names avoid shadowing globals such as `document`, in-place `sort()`
+is applied to arrays this code just built, and object spreads inside `map()`
+are kept for readability.
+
 ## Before opening a pull request
 
-Run the automated tests:
+Run the automated tests and checks:
 
 ```sh
 aube test
+```
+
+```sh
+aube run lint
+```
+
+```sh
+aube run format:check
 ```
 
 Every bug fix and feature must also be verified manually in Chrome:
