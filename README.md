@@ -14,6 +14,8 @@ Right now this modifies:
 It works on GitHub’s existing pages, uses your existing session, and does not
 require an API token. No promises it will always remain that way but so far I don't seem to need a token.
 
+[Install jdx Flavored GitHub from the Chrome Web Store](https://chromewebstore.google.com/detail/jdx-flavored-github/dmiieoopojnjepheeimdcdlhdhdfiija)
+
 ## Focused inbox
 
 The killer feature for me is the Focused inbox:
