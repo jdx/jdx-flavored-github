@@ -199,6 +199,9 @@ GitHub's OIDC token to obtain a short-lived access token, so no service account
 key is stored in GitHub. The store listing and privacy details must already be
 complete, and visibility changes must be published manually once before API
 publishing can use them.
+
+Run `scripts/setup-chrome-web-store.sh` to create the service account and
+repository-scoped Workload Identity Federation configuration for this project.
 The workflow can also be dispatched manually with a specific draft tag.
 
 This project has not yet had a public release. Change schemas and built-in
