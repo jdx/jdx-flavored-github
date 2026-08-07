@@ -2,11 +2,10 @@
 
 ## [0.2.1](https://github.com/jdx/jdx-flavored-github/compare/jdx-flavored-github-v0.2.0...jdx-flavored-github-v0.2.1) (2026-08-07)
 
-
 ### Bug Fixes
 
-* **ci:** format release pull requests ([#29](https://github.com/jdx/jdx-flavored-github/issues/29)) ([ab3975d](https://github.com/jdx/jdx-flavored-github/commit/ab3975dda7a17f424020f935f0221f6fbbc67eb4))
-* **notifications:** promote next stacked item after done ([#26](https://github.com/jdx/jdx-flavored-github/issues/26)) ([6aa6ddc](https://github.com/jdx/jdx-flavored-github/commit/6aa6ddc68b5f68a090ef0b540cbf24fc0cc36a13))
+- **ci:** format release pull requests ([#29](https://github.com/jdx/jdx-flavored-github/issues/29)) ([ab3975d](https://github.com/jdx/jdx-flavored-github/commit/ab3975dda7a17f424020f935f0221f6fbbc67eb4))
+- **notifications:** promote next stacked item after done ([#26](https://github.com/jdx/jdx-flavored-github/issues/26)) ([6aa6ddc](https://github.com/jdx/jdx-flavored-github/commit/6aa6ddc68b5f68a090ef0b540cbf24fc0cc36a13))
 
 ## [0.2.0](https://github.com/jdx/jdx-flavored-github/compare/jdx-flavored-github-v0.1.0...jdx-flavored-github-v0.2.0) (2026-08-01)
 
