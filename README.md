@@ -179,6 +179,29 @@ creates a GitHub release, runs the full test suite, and attaches a Chrome-ready
 ZIP with `manifest.json` at its root.
 
 If packaging fails, rerunning the workflow resumes the latest draft release.
+
+The release workflow can also upload the archive to the Chrome Web Store and
+submit it for review. Configure a `chrome-web-store` GitHub environment with
+these variables:
+
+- `CWS_EXTENSION_ID`: the extension ID from the Developer Dashboard.
+- `CWS_PUBLISHER_ID`: the publisher ID from **Publisher > Settings**.
+- `CWS_SERVICE_ACCOUNT`: a Google Cloud service account email added under the
+  Chrome Web Store Developer Dashboard's **Account** section.
+- `CWS_WORKLOAD_IDENTITY_PROVIDER`: the full Google Cloud Workload Identity
+  Provider resource name trusted to authenticate this repository's release
+  workflow.
+
+Enable the Chrome Web Store API in the service account's Google Cloud project,
+then grant this repository's Workload Identity principal
+`roles/iam.workloadIdentityUser` on the service account. The release job uses
+GitHub's OIDC token to obtain a short-lived access token, so no service account
+key is stored in GitHub. The store listing and privacy details must already be
+complete, and visibility changes must be published manually once before API
+publishing can use them.
+
+Run `scripts/setup-chrome-web-store.sh` to create the service account and
+repository-scoped Workload Identity Federation configuration for this project.
 The workflow can also be dispatched manually with a specific draft tag.
 
 This project has not yet had a public release. Change schemas and built-in
