@@ -9,6 +9,14 @@ export function filterNotificationRowsForFolder<
   );
 }
 
+export function filterNotificationStackRows<
+  T extends {classList: {contains: (token: string) => boolean}},
+>(rows: Iterable<T>, includeArchived: boolean): T[] {
+  return filterNotificationRowsForFolder(rows, includeArchived).filter(
+    (row) => !row.classList.contains('github-inbox-tuner-hidden'),
+  );
+}
+
 export function getNotificationRepository(element?: Element): string | undefined {
   const itemLink = element?.classList.contains('notifications-list-item')
     ? element.querySelector<HTMLAnchorElement>('.notification-list-item-link[href]')

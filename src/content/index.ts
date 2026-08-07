@@ -11,6 +11,7 @@ import {
 import {findStackComponents, isDependencyUpdateAuthor, orderStackItems} from './grouping.js';
 import {
   filterNotificationRowsForFolder,
+  filterNotificationStackRows,
   getNotificationFacts,
   getNotificationRepository,
   getPullRequestReference,
@@ -1356,8 +1357,10 @@ import {updateRevealedIndicator, updateStatusBadges} from './status.js';
         [...document.querySelectorAll('.notifications-list-item')].map((row) => row.parentElement),
       ),
     ].map((list) => ({
-      candidates: [...list.querySelectorAll(':scope > .notifications-list-item')]
-        .filter((row) => !row.classList.contains('github-inbox-tuner-hidden'))
+      candidates: filterNotificationStackRows(
+        list.querySelectorAll(':scope > .notifications-list-item'),
+        showsArchivedNotifications(),
+      )
         .map((row) => ({reference: getPullRequestReference(row), row}))
         .filter((item) => item.reference),
       list,
