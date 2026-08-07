@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/jdx/jdx-flavored-github/compare/jdx-flavored-github-v0.2.1...jdx-flavored-github-v0.2.2) (2026-08-07)
+
+
+### Bug Fixes
+
+* **ci:** handle empty release PR output ([#30](https://github.com/jdx/jdx-flavored-github/issues/30)) ([408aee0](https://github.com/jdx/jdx-flavored-github/commit/408aee083dad09b013c59e7b0cc09d249de2650f))
+
 ## [0.2.1](https://github.com/jdx/jdx-flavored-github/compare/jdx-flavored-github-v0.2.0...jdx-flavored-github-v0.2.1) (2026-08-07)
 
 ### Bug Fixes
