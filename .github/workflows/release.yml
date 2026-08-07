@@ -147,22 +147,24 @@ jobs:
             --data-binary "@${ARCHIVE}" \
             "https://chromewebstore.googleapis.com/upload/v2/${resource}:upload")"
           state="$(jq --raw-output '.uploadState' <<< "$response")"
-          for _ in {1..30}; do
-            if [ "$state" = "SUCCEEDED" ]; then
-              echo "Chrome Web Store accepted the package."
-              exit 0
-            fi
-            if [ "$state" != "IN_PROGRESS" ]; then
-              echo "Unexpected Chrome Web Store upload state: ${state}" >&2
-              jq . <<< "$response" >&2
-              exit 1
-            fi
+          polls_remaining=30
+          while [ "$state" = "IN_PROGRESS" ] && [ "$polls_remaining" -gt 0 ]; do
             sleep 10
             response="$(curl --fail-with-body --silent --show-error \
               --header "Authorization: Bearer ${ACCESS_TOKEN}" \
               "https://chromewebstore.googleapis.com/v2/${resource}:fetchStatus")"
             state="$(jq --raw-output '.lastAsyncUploadState' <<< "$response")"
+            polls_remaining=$((polls_remaining - 1))
           done
+          if [ "$state" = "SUCCEEDED" ]; then
+            echo "Chrome Web Store accepted the package."
+            exit 0
+          fi
+          if [ "$state" != "IN_PROGRESS" ]; then
+            echo "Unexpected Chrome Web Store upload state: ${state}" >&2
+            jq . <<< "$response" >&2
+            exit 1
+          fi
           echo "Chrome Web Store upload did not finish within five minutes." >&2
           exit 1
       - name: Submit extension for review
