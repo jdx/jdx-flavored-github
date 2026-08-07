@@ -10,23 +10,15 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": [
-    "storage"
-  ],
+  "permissions": ["storage"],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://github.com/*"
-      ],
-      "css": [
-        "content.css"
-      ],
-      "js": [
-        "content.js"
-      ],
+      "matches": ["https://github.com/*"],
+      "css": ["content.css"],
+      "js": ["content.js"],
       "run_at": "document_start"
     }
   ],
