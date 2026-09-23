@@ -1,2 +1,2 @@
 [tools]
-aube = "1.36.0"
+aube = { version = "latest", minimum_release_age = "0s" }
