@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "jdx Flavored GitHub",
   "short_name": "jdx GitHub",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Adds saved, count-bearing views to GitHub notifications, pull requests, and issues.",
   "icons": {
     "16": "icons/icon-16.png",
